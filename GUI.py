@@ -329,7 +329,7 @@ class TestBuilder(object):
         bundle.limits = limitsNS['limits']  # Setup bundle function
         
         bundle.start()   # Start the test
-
+        
     
 
 class MainFrame(wx.Frame):
@@ -1313,7 +1313,8 @@ class MainFrame(wx.Frame):
         root = self.treeTest.GetRootItem()
         self.__recursiveApply(root, self.__testBuilder.runModule,
                               { "bundle" : self.__bundle,
-                                "tree" : self.treeTest })
+                                "tree" : self.treeTest }, True) # True to
+                            # execute the tips of the tree branches
         event.Skip()
 
     def eventPauseTest(self, event): # wxGlade: MainFrame.<event_handler>
@@ -1613,20 +1614,28 @@ class MainFrame(wx.Frame):
             self.treeTest.SetItemTextColour(item, wx.Colour(0, 0, 0))
 
     
-    def __recursiveApply(self, item, function, parameters):
+    def __recursiveApply(self, item, function, parameters, tips = False):
         ''' 
         Recursively applies the function to item using the parameters,
         followed by applying function to all the item's children, and so on.
         Parameters is a dictionary containing the name of the parameters
         and the values of the parameters.
         '''
-        function(item, parameters)
+        # This is messy, and should be done differently...
+        # What if there can be parallel threads?
+        if not tips:    # Hack to executable when necessary
+            function(item, parameters)
         self.__setTreeTextColor(item)
         if self.treeTest.ItemHasChildren(item):
             child, cookie = self.treeTest.GetFirstChild(item)
             while (child.IsOk()):
-                self.__recursiveApply(child, function, parameters)
+                self.__recursiveApply(child, function, parameters, tips)
                 child, cookie = self.treeTest.GetNextChild(item, cookie)
+        elif tips: # Excecuting code here
+            while(self.__bundle.isAlive()):
+            # This is obviously not very useful, but for demo it is OK
+                pass
+            function(item, parameters)
                
 
     def eventTreeTestRightMouse(self, event):

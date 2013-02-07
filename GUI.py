@@ -176,6 +176,46 @@ class TreeData(wx.TreeItemData):
     
 
 
+class TestThread(threading.Thread):
+    '''
+    The thread object that runs the test.
+    '''
+    def __init__(self, output, parameters, module, validate, limits):
+        '''
+        Initialize the internal data.
+        '''
+        threading.Thread.__init__(self, name = "bundle")
+        self.output = output        # Text control for test to output messages
+        self.parameters = parameters  # Will point to parameter function
+        self.module = module      # Will point to module function
+        self.validate = validate    # Will point to validator function
+        self.limits = limits      # Will point to limits function
+        self.uutCom = None
+        self.db = None
+        self.__testData = []    # List of { "TestName" : [Test, Results] }
+        self.testResult = None    # Temp store test results (after limit check)
+        self.testResponse = None  # Temp store UUT response to test
+        self.testLimits = None    # Temp hold limits object (holds units, etc)
+        self.moduleData = None  # Temp store of any test data generated
+        self.__testName = ""    # Full name of test
+        
+        # Eventually, this will need to be thread-safe
+        self.__guiOutput = output    # Point to GUI output text control 
+
+
+    def run(self):
+        '''
+        Start running the stored test module.
+        '''
+        # Pass in this Bundle. It contains parameter, validator, limits, etc
+        if self.parameters is None or self.module is None or self.validate \
+            is None or self.limits is None:
+#TODO:    Throw exception
+            return
+        self.module(self)    # IGNORE: E1102
+    
+    
+        
 class Bundle(threading.Thread):
     '''
     A bundle object contains all the necessary information to run tests on the
@@ -198,6 +238,7 @@ class Bundle(threading.Thread):
         self.testLimits = None    # Temp hold limits object (holds units, etc)
         self.moduleData = None  # Temp store of any test data generated
         self.__testName = ""    # Full name of test
+        self.__testThread = None    # Thread running the test
         
         # Eventually, this will need to be thread-safe
         self.__guiOutput = output    # Point to GUI output text control 
@@ -224,30 +265,37 @@ class Bundle(threading.Thread):
                                    })
             
             
-    def run(self):
-        '''
-        Start running the stored test module.
-        '''
-        # Pass in this Bundle. It contains parameter, validator, limits, etc
-        if self.parameters is None or self.module is None or self.validate \
-            is None or self.limits is None:
-#TODO:    Throw exception
-            return
-        self.module(self)    # IGNORE: E1102
-        self.__packTestData()
-        # Clear out all test code before ending
-        self.parameters = None
-        self.module = None
-        self.validate = None
-        self.limits = None
-    
-    
     def load(self, parameters, module, validate, limits):
         ''' Load the bundle with the test functions '''
         self.parameters = parameters
         self.module = module
         self.validate = validate
         self.limits = limits
+        
+        
+    def start(self):
+        '''
+        Start the module test code.
+        '''
+        from time import sleep
+        if self.__testThread is None:
+            self.__testThread = TestThread(self.output, self.parameters,
+                                        self.module, self.validate, self.limits)
+            self.__testThread.start()
+            
+            self.__packTestData()
+            # Clear out all test code before ending
+            self.parameters = None
+            self.module = None
+            self.validate = None
+            self.limits = None
+            while self.__testThread.isAlive():
+                print "Waiting for thread to end..."
+                sleep(0.1)
+            self.__testThread = None
+        else:
+            raise RuntimeError("Test thread was not deleted properly")
+        
         
         
     def setUUTCom(self, uutCom):
@@ -329,7 +377,7 @@ class TestBuilder(object):
         bundle.limits = limitsNS['limits']  # Setup bundle function
         
         bundle.start()   # Start the test
-        
+
     
 
 class MainFrame(wx.Frame):
@@ -1313,8 +1361,7 @@ class MainFrame(wx.Frame):
         root = self.treeTest.GetRootItem()
         self.__recursiveApply(root, self.__testBuilder.runModule,
                               { "bundle" : self.__bundle,
-                                "tree" : self.treeTest }, True) # True to
-                            # execute the tips of the tree branches
+                                "tree" : self.treeTest })
         event.Skip()
 
     def eventPauseTest(self, event): # wxGlade: MainFrame.<event_handler>
@@ -1614,28 +1661,20 @@ class MainFrame(wx.Frame):
             self.treeTest.SetItemTextColour(item, wx.Colour(0, 0, 0))
 
     
-    def __recursiveApply(self, item, function, parameters, tips = False):
+    def __recursiveApply(self, item, function, parameters):
         ''' 
         Recursively applies the function to item using the parameters,
         followed by applying function to all the item's children, and so on.
         Parameters is a dictionary containing the name of the parameters
         and the values of the parameters.
         '''
-        # This is messy, and should be done differently...
-        # What if there can be parallel threads?
-        if not tips:    # Hack to executable when necessary
-            function(item, parameters)
+        function(item, parameters)
         self.__setTreeTextColor(item)
         if self.treeTest.ItemHasChildren(item):
             child, cookie = self.treeTest.GetFirstChild(item)
             while (child.IsOk()):
-                self.__recursiveApply(child, function, parameters, tips)
+                self.__recursiveApply(child, function, parameters)
                 child, cookie = self.treeTest.GetNextChild(item, cookie)
-        elif tips: # Excecuting code here
-            while(self.__bundle.isAlive()):
-            # This is obviously not very useful, but for demo it is OK
-                pass
-            function(item, parameters)
                
 
     def eventTreeTestRightMouse(self, event):

@@ -21,6 +21,30 @@ import threading
 # Resource path
 R = "/home/cmcculloch/Documents/Armada/Lua_Test_System/cthulu/"
 
+# Define notification event for thread completion
+EVT_RESULT_ID = wx.NewId()
+ 
+def EVT_RESULT(win, func):
+    '''
+    Define Result Event.
+    '''
+    win.Connect(-1, -1, EVT_RESULT_ID, func)
+
+ 
+class ResultEvent(wx.PyEvent):
+    '''
+    Simple event to carry arbitrary result data.
+    '''
+    def __init__(self, data):
+        '''
+        Init Result Event.
+        '''
+        wx.PyEvent.__init__(self)
+        self.SetEventType(EVT_RESULT_ID)
+        self.data = data
+ 
+
+
 class TreeData(wx.TreeItemData):
     '''
     Retain breakpoint state, skip state, test code, etc inside the tree item.
@@ -230,7 +254,7 @@ class CompiledModule():
         self.__validate = validate
         self.__limits = limits
         self.__bundle = bundle
-        print "Setting", self.__testName, parameters, module, validate, limits, bundle
+#        print "Setting", self.__testName, parameters, module, validate, limits, bundle
         
         
     def getTestName(self):
@@ -264,7 +288,7 @@ class Bundle():
     A bundle object contains all the necessary information to run tests on the
     test system.
     '''
-    def __init__(self, output):
+    def __init__(self, output, parent):
         '''
         Initialize the internal data.
         '''
@@ -281,17 +305,18 @@ class Bundle():
         self.moduleData = None  # Temp store of any test data generated
         self.__testName = ""    # Full name of test
         self.__testThread = None    # Thread running the test
-        
-        # Eventually, this will need to be thread-safe
-        self.__guiOutput = output    # Point to GUI output text control 
+        self.__guiOutput = output    # Point to GUI output text control
+        self.__parent = parent      # Parent window 
         
     
     def output(self, text):
         '''
-        Send the text to the GUI text control. Eventually, this will need to
-        be thread-safe.
+        Send the text to the GUI text control via an event handler.
+        This is thread-safe.
         '''
-        self.__guiOutput.AppendText("%s\n" % text)
+        wx.PostEvent(self.__parent, ResultEvent("%s\n" % text))
+
+#    self.__guiOutput.AppendText("%s\n" % text)
         
         
     def packTestData(self, state = True):
@@ -604,7 +629,7 @@ class MainFrame(wx.Frame):
         self.__treeSizer = None   # Will be set when doing layout
         
         self.__testBuilder = TestBuilder()
-        self.__bundle = Bundle(self.textOutput)
+        self.__bundle = Bundle(self.textOutput, self)
         
         self.__showCodeState = False
         
@@ -662,6 +687,9 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.eventCodeEmailChanges, id=40)
         self.Bind(wx.EVT_BUTTON, self.eventCodeSaveLocal, id=41)
         self.Bind(wx.EVT_BUTTON, self.eventCodeDone, id=42)
+        
+        #Inter-thread communication event
+        EVT_RESULT(self, self.__updateGUI)
         
         # end wxGlade
 
@@ -1103,11 +1131,11 @@ class MainFrame(wx.Frame):
                          "\n"
                          "\tbundle.output(\"Running test: %s\" % testName)\n"
                          "\tbundle.output(\"Bundle: %s\" % bundle)\n"
-                         "\tprint \"parameters\", bundle.parameters\n"
-                         "\tprint \"module\", bundle.module\n"
-                         "\tprint \"validate\", bundle.validate\n"
-                         "\tprint \"limits\", bundle.limits\n"
-                         "\tprint \"output\", bundle.output\n"
+                         "#\tprint \"parameters\", bundle.parameters\n"
+                         "#\tprint \"module\", bundle.module\n"
+                         "#\tprint \"validate\", bundle.validate\n"
+                         "#\tprint \"limits\", bundle.limits\n"
+                         "#\tprint \"output\", bundle.output\n"
                          "\tparameters = bundle.parameters(bundle)\n"
                          "\t# Parameters just as example.\n"
                          "\tbundle.output(\"Parameters: %s\" % parameters)\n\n"
@@ -1118,7 +1146,7 @@ class MainFrame(wx.Frame):
                          "from UUT\n\n"
                          "\tbundle.testResult = bundle.validate(bundle) # test "
                          "against limits and save result\n"
-                         "\tsleep(1)  # Just for demo purposes\n"
+                         "\tsleep(0.2)  # Just for demo purposes\n"
                          "# Eventually, the results are put in the database\n"
                          "# and the test engine loads another test into the\n"
                          "# bundle to be executed\n" # returns to the bundle
@@ -1917,6 +1945,20 @@ class MainFrame(wx.Frame):
     def eventLimitsCodeChange(self, event): # wxGlade: MainFrame.<event_handler>
         print "Event handler `eventLimitsCodeChange' not implemented"
         event.Skip()
+
+
+    def __updateGUI(self, msg):
+        '''
+        Receives data from thread and updates the textOutput (if text)
+        '''
+        t = msg.data
+        if isinstance(t, int):
+            pass
+#            self.displayLbl.SetLabel("Time since thread started: %s seconds" % t)
+        else:
+            self.textOutput.AppendText(t)
+#            self.displayLbl.SetLabel("%s" % t)
+#            self.btn.Enable()
 
 # end of class MainFrame
 

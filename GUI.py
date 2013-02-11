@@ -180,27 +180,12 @@ class TestThread(threading.Thread):
     '''
     The thread object that runs the test.
     '''
-    def __init__(self, output, parameters, module, validate, limits):
+    def __init__(self, bundle):
         '''
         Initialize the internal data.
         '''
-        threading.Thread.__init__(self, name = "bundle")
-        self.output = output        # Text control for test to output messages
-        self.parameters = parameters  # Will point to parameter function
-        self.module = module      # Will point to module function
-        self.validate = validate    # Will point to validator function
-        self.limits = limits      # Will point to limits function
-        self.uutCom = None
-        self.db = None
-        self.__testData = []    # List of { "TestName" : [Test, Results] }
-        self.testResult = None    # Temp store test results (after limit check)
-        self.testResponse = None  # Temp store UUT response to test
-        self.testLimits = None    # Temp hold limits object (holds units, etc)
-        self.moduleData = None  # Temp store of any test data generated
-        self.__testName = ""    # Full name of test
-        
-        # Eventually, this will need to be thread-safe
-        self.__guiOutput = output    # Point to GUI output text control 
+        threading.Thread.__init__(self, name = "testthread")
+        self.__bundle = bundle        # Bundle of test information
 
 
     def run(self):
@@ -208,15 +193,53 @@ class TestThread(threading.Thread):
         Start running the stored test module.
         '''
         # Pass in this Bundle. It contains parameter, validator, limits, etc
-        if self.parameters is None or self.module is None or self.validate \
-            is None or self.limits is None:
-#TODO:    Throw exception
-            return
-        self.module(self)    # IGNORE: E1102
+        pass
     
     
         
-class Bundle(threading.Thread):
+class CompiledModule():
+    '''
+    Object to contain the compiled code and other information.
+    '''
+    def __init__(self, testName):
+        '''
+        Setup the object.
+        '''
+        self.__parameters = None    # Will point to parameter function
+        self.__module = None        # Will point to module function
+        self.__validate = None      # Will point to validator function
+        self.__limits = None        # Will point to limits function
+        self.__bundle = None        # Will point to the bundle
+        self.__testName = testName  # The name of the test
+        
+        
+    def setBundle(self, bundle):
+        '''
+        Set the bundle.
+        '''
+        self.__bundle = bundle
+        
+        
+    def set(self, parameters, module, validate, limits, bundle):
+        '''
+        Set all of the internal compiled code variables and bundle.
+        '''
+        self.__parameters = parameters
+        self.__module = module
+        self.__validate = validate
+        self.__limits = limits
+        self.__bundle = bundle
+        
+        
+    def getTestName(self):
+        '''
+        Return the test name.
+        '''
+        return self.__testName
+        
+
+        
+class Bundle():
     '''
     A bundle object contains all the necessary information to run tests on the
     test system.
@@ -225,14 +248,10 @@ class Bundle(threading.Thread):
         '''
         Initialize the internal data.
         '''
-        threading.Thread.__init__(self, name = "bundle")
-        self.parameters = None  # Will point to parameter function
-        self.module = None      # Will point to module function
-        self.validate = None    # Will point to validator function
-        self.limits = None      # Will point to limits function
         self.uutCom = None
         self.db = None
         self.__testData = []    # List of { "TestName" : [Test, Results] }
+        self.__testCode = []    # List of pre-compiled test code
         self.testResult = None    # Temp store test results (after limit check)
         self.testResponse = None  # Temp store UUT response to test
         self.testLimits = None    # Temp hold limits object (holds units, etc)
@@ -315,6 +334,14 @@ class Bundle(threading.Thread):
         '''
         self.__testName = name
         
+        
+    def appendCompiledModule(self, module):
+        '''
+        Append the compiled module to the list to be run later.
+        '''
+        self.__testCode.append(module)
+        print module.getTestName()
+        
 
 
 class TestBuilder(object):
@@ -329,15 +356,16 @@ class TestBuilder(object):
         pass # nothing to do, but may need it later.
     
     
-    def runModule(self, item, paramDict):
+    def build(self, item, paramDict):
         '''
+        Pre-compile the code and append to the code list in the bundle.
         Load the bundle with compiled test code from the treeData object.
         treeData is an instance of the data from the module in the tree.
         '''
         tree = paramDict["tree"]
         treeData = wx.TreeCtrl.GetPyData(tree, item)
         bundle = paramDict["bundle"]
-        bundle.setTestName(treeData.getName())
+        module = CompiledModule(treeData.getName())
         
         strParametersCode = treeData.getParametersCode()
         if "def parameters(" not in strParametersCode:
@@ -347,7 +375,7 @@ class TestBuilder(object):
         parametersCode = compile(strParametersCode, '<string>', 'exec')
         parametersNS = {}   # Assign the namespace dictionary
         exec parametersCode in parametersNS     # IGNORE:W0122
-        bundle.parameters = parametersNS['parameters']  # Setup bundle function
+        parameters = parametersNS['parameters']  # Setup bundle function
 
         strModuleCode = treeData.getModuleCode()
         if "def module(" not in strModuleCode:
@@ -356,7 +384,7 @@ class TestBuilder(object):
         moduleCode = compile(strModuleCode, '<string>', 'exec')
         moduleNS = {}   # Assign the namespace dictionary
         exec moduleCode in moduleNS     # IGNORE:W0122
-        bundle.module = moduleNS['module']  # Setup bundle function
+        moduleCode = moduleNS['module']  # Setup bundle function
 
         strValidatorCode = treeData.getValidatorCode()
         if "def validate(" not in strValidatorCode:
@@ -365,7 +393,7 @@ class TestBuilder(object):
         valitatorCode = compile(strValidatorCode, '<string>', 'exec')
         valitatorNS = {}   # Assign the namespace dictionary
         exec valitatorCode in valitatorNS     # IGNORE:W0122
-        bundle.validate = valitatorNS['validate']  # Setup bundle function
+        validate = valitatorNS['validate']  # Setup bundle function
 
         strLimitsCode = treeData.getLimitsCode()
         if "def limits(" not in strLimitsCode:
@@ -374,9 +402,10 @@ class TestBuilder(object):
         limitsCode = compile(strLimitsCode, '<string>', 'exec')
         limitsNS = {}   # Assign the namespace dictionary
         exec limitsCode in limitsNS     # IGNORE:W0122
-        bundle.limits = limitsNS['limits']  # Setup bundle function
+        limits = limitsNS['limits']  # Setup bundle function
         
-        bundle.start()   # Start the test
+        module.set(parameters, moduleCode, validate, limits, bundle)
+        bundle.appendCompiledModule(module)
 
     
 
@@ -1359,7 +1388,7 @@ class MainFrame(wx.Frame):
         self.__setTestButtons()
         self.textOutput.AppendText("Starting or continuing a test suite.\n")
         root = self.treeTest.GetRootItem()
-        self.__recursiveApply(root, self.__testBuilder.runModule,
+        self.__recursiveApply(root, self.__testBuilder.build,
                               { "bundle" : self.__bundle,
                                 "tree" : self.treeTest })
         event.Skip()

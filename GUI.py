@@ -23,12 +23,21 @@ R = "/home/cmcculloch/Documents/Armada/Lua_Test_System/cthulu/"
 
 # Define notification event for thread completion
 EVT_RESULT_ID = wx.NewId()
+EVT_STOP_ID = wx.NewId()
+
  
 def EVT_RESULT(win, func):
     '''
     Define Result Event.
     '''
     win.Connect(-1, -1, EVT_RESULT_ID, func)
+    
+    
+def EVT_STOP(win, func):
+    '''
+    Define a Stop Test Event.
+    '''
+    win.Connect(-1, -1, EVT_STOP_ID, func)
 
  
 class ResultEvent(wx.PyEvent):
@@ -42,6 +51,21 @@ class ResultEvent(wx.PyEvent):
         wx.PyEvent.__init__(self)
         self.SetEventType(EVT_RESULT_ID)
         self.data = data
+ 
+
+
+class StopEvent(wx.PyEvent):
+    '''
+    Simple event to tell the GUI that the test has stopped due to error or
+    normal completion.
+    '''
+    def __init__(self, data):
+        '''
+        Init Stop Event.
+        '''
+        wx.PyEvent.__init__(self)
+        self.SetEventType(EVT_STOP_ID)
+        self.data = data    # Some kind of message about the stopping of test
  
 
 
@@ -219,6 +243,7 @@ class TestThread(threading.Thread):
         '''
         for module in self.__code:
             module.run()
+        self.__bundle.stop("Test Finished Normally")
     
     
         
@@ -316,7 +341,13 @@ class Bundle():
         '''
         wx.PostEvent(self.__parent, ResultEvent("%s\n" % text))
 
-#    self.__guiOutput.AppendText("%s\n" % text)
+
+    def stop(self, text):
+        '''
+        Send a signal to stop the test.
+        '''
+        wx.PostEvent(self.__parent, StopEvent("%s\n" % text))
+        
         
         
     def packTestData(self, state = True):
@@ -688,8 +719,9 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.eventCodeSaveLocal, id=41)
         self.Bind(wx.EVT_BUTTON, self.eventCodeDone, id=42)
         
-        #Inter-thread communication event
+        #Inter-thread communication events
         EVT_RESULT(self, self.__updateGUI)
+        EVT_STOP(self, self.eventStopTest)
         
         # end wxGlade
 
@@ -1462,18 +1494,27 @@ class MainFrame(wx.Frame):
     def eventStopTest(self, event): # wxGlade: MainFrame.<event_handler>
         '''
         The user wants to stop the test... are they sure?
+        Or, the test stopped normally.
         '''
-        msgDlg = wx.MessageDialog(self, "Are you sure you wish "
-                                        "to stop the test?.",
-                                        "Stopping Test",
-                                        wx.YES_NO | wx.NO_DEFAULT)
-        if msgDlg.ShowModal() == wx.ID_YES:
+        def common():
+            '''Common code depending on type of event.'''
             self.__testState = "STOP"
             self.__setTestButtons()
             self.textOutput.AppendText("Test suite stopped.\n")
+            
+        if event.EventType == EVT_STOP_ID:
+            self.textOutput.AppendText(event.data)
+            common()
         else:
-            self.textOutput.AppendText("Test suite still running.\n")
-        event.Skip()
+            msgDlg = wx.MessageDialog(self, "Are you sure you wish "
+                                            "to stop the test?.",
+                                            "Stopping Test",
+                                            wx.YES_NO | wx.NO_DEFAULT)
+            if msgDlg.ShowModal() == wx.ID_YES:
+                common()
+            else:
+                self.textOutput.AppendText("Test suite still running.\n")
+            event.Skip()
 
 
     def eventTestRepeat(self, event): # wxGlade: MainFrame.<event_handler>

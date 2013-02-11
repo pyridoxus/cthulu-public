@@ -180,20 +180,21 @@ class TestThread(threading.Thread):
     '''
     The thread object that runs the test.
     '''
-    def __init__(self, bundle):
+    def __init__(self, code, bundle):
         '''
         Initialize the internal data.
         '''
         threading.Thread.__init__(self, name = "testthread")
+        self.__code = code          # List containing compiled code
         self.__bundle = bundle        # Bundle of test information
 
 
     def run(self):
         '''
-        Start running the stored test module.
+        Start running the stored test modules.
         '''
-        # Pass in this Bundle. It contains parameter, validator, limits, etc
-        pass
+        for module in self.__code:
+            module.run()
     
     
         
@@ -229,6 +230,7 @@ class CompiledModule():
         self.__validate = validate
         self.__limits = limits
         self.__bundle = bundle
+        print "Setting", self.__testName, parameters, module, validate, limits, bundle
         
         
     def getTestName(self):
@@ -236,6 +238,24 @@ class CompiledModule():
         Return the test name.
         '''
         return self.__testName
+    
+    
+    def run(self):
+        '''
+        Run the module code.
+        '''
+        if self.__bundle is not None:
+            # Store the current function pointers in the bundle so that
+            # the module functions can access each other.
+            self.__bundle.parameters = self.__parameters
+            self.__bundle.module = self.__module
+            self.__bundle.validate = self.__validate
+            self.__bundle.limits = self.__limits
+            
+            # Start the module code, sending in the bundle.
+            if self.__module is not None:
+                self.__module(self.__bundle)
+                print self.__testName
         
 
         
@@ -248,6 +268,9 @@ class Bundle():
         '''
         Initialize the internal data.
         '''
+        self.parameters = None
+        self.limits = None
+        self.validate = None
         self.uutCom = None
         self.db = None
         self.__testData = []    # List of { "TestName" : [Test, Results] }
@@ -298,8 +321,7 @@ class Bundle():
         '''
         from time import sleep
         if self.__testThread is None:
-            self.__testThread = TestThread(self.output, self.parameters,
-                                        self.module, self.validate, self.limits)
+            self.__testThread = TestThread(self.__testCode, self)
             self.__testThread.start()
             
             self.__packTestData()
@@ -340,7 +362,6 @@ class Bundle():
         Append the compiled module to the list to be run later.
         '''
         self.__testCode.append(module)
-        print module.getTestName()
         
 
 
@@ -1093,7 +1114,9 @@ class MainFrame(wx.Frame):
                          "\n"
                          "\tbundle.output(\"Running test: %s\" % testName)\n"
                          "\tbundle.output(\"Bundle: %s\" % bundle)\n"
+                         "\tprint \"Debug one\"\n"
                          "\tparameters = bundle.parameters(bundle)\n"
+                         "\tprint \"Debug two\"\n"
                          "\t# Parameters just as example.\n"
                          "\tbundle.output(\"Parameters: %s\" % parameters)\n\n"
                          "\t# Pretend to setup a voltage input...\n"
@@ -1391,6 +1414,7 @@ class MainFrame(wx.Frame):
         self.__recursiveApply(root, self.__testBuilder.build,
                               { "bundle" : self.__bundle,
                                 "tree" : self.treeTest })
+        self.__bundle.start()
         event.Skip()
 
     def eventPauseTest(self, event): # wxGlade: MainFrame.<event_handler>

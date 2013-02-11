@@ -255,7 +255,7 @@ class CompiledModule():
             # Start the module code, sending in the bundle.
             if self.__module is not None:
                 self.__module(self.__bundle)
-                print self.__testName
+                self.__bundle.packTestData()
         
 
         
@@ -294,7 +294,7 @@ class Bundle():
         self.__guiOutput.AppendText("%s\n" % text)
         
         
-    def __packTestData(self, state = True):
+    def packTestData(self, state = True):
         '''
         If state is True, then Store all test results, response, limits, etc.
         in testData[], otherwise do nothing.
@@ -323,17 +323,6 @@ class Bundle():
         if self.__testThread is None:
             self.__testThread = TestThread(self.__testCode, self)
             self.__testThread.start()
-            
-            self.__packTestData()
-            # Clear out all test code before ending
-            self.parameters = None
-            self.module = None
-            self.validate = None
-            self.limits = None
-            while self.__testThread.isAlive():
-                print "Waiting for thread to end..."
-                sleep(0.1)
-            self.__testThread = None
         else:
             raise RuntimeError("Test thread was not deleted properly")
         
@@ -1114,9 +1103,12 @@ class MainFrame(wx.Frame):
                          "\n"
                          "\tbundle.output(\"Running test: %s\" % testName)\n"
                          "\tbundle.output(\"Bundle: %s\" % bundle)\n"
-                         "\tprint \"Debug one\"\n"
+                         "\tprint \"parameters\", bundle.parameters\n"
+                         "\tprint \"module\", bundle.module\n"
+                         "\tprint \"validate\", bundle.validate\n"
+                         "\tprint \"limits\", bundle.limits\n"
+                         "\tprint \"output\", bundle.output\n"
                          "\tparameters = bundle.parameters(bundle)\n"
-                         "\tprint \"Debug two\"\n"
                          "\t# Parameters just as example.\n"
                          "\tbundle.output(\"Parameters: %s\" % parameters)\n\n"
                          "\t# Pretend to setup a voltage input...\n"

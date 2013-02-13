@@ -1235,7 +1235,7 @@ class MainFrame(wx.Frame):
                          "from UUT\n\n"
                          "\tbundle.testResult = bundle.validate(bundle) # test "
                          "against limits and save result\n"
-                         "\tsleep(0.2)  # Just for demo purposes\n"
+                         "\tsleep(2)  # Just for demo purposes\n"
                          "# Eventually, the results are put in the database\n"
                          "# and the test engine loads another test into the\n"
                          "# bundle to be executed\n" # returns to the bundle

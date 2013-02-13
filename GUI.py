@@ -17,6 +17,7 @@ import wx.grid
 
 from math import sqrt
 import threading
+from copy import copy
 
 # Resource path
 R = "/home/cmcculloch/Documents/Armada/Lua_Test_System/cthulu/"
@@ -241,9 +242,16 @@ class TestThread(threading.Thread):
         '''
         Start running the stored test modules.
         '''
+        returnMsg = "Test finished normally"
         for module in self.__code:
             module.run()
-        self.__bundle.stop("Test Finished Normally")
+            if self.__bundle.haveMessage():
+                msg = self.__bundle.getMessage()
+                if msg == "STOP":
+                    returnMsg = "User stopped the test."
+                    break
+                
+        self.__bundle.stop(returnMsg)
     
     
         
@@ -318,6 +326,7 @@ class Bundle():
         Initialize the internal data.
         '''
         self.parameters = None
+        self.module = None
         self.limits = None
         self.validate = None
         self.uutCom = None
@@ -331,8 +340,57 @@ class Bundle():
         self.__testName = ""    # Full name of test
         self.__testThread = None    # Thread running the test
         self.__guiOutput = output    # Point to GUI output text control
-        self.__parent = parent      # Parent window 
+        self.__parent = parent      # Parent window
+        self.__message = ""         # Message from GUI
+        self.__validMessage = False         # Flag for a valid message present
+        self.__msgLock = threading.Lock()   # Message lock
+        self.__validMsgLock = threading.Lock()  # Flag lock
         
+        
+    def haveMessage(self):
+        '''
+        Return True if a message is ready for the test thread from GUI.
+        '''
+        return self.__validMessage
+
+
+    def getMessage(self):
+        '''
+        Return the message and reset flags.
+        '''
+        self.__msgLock.acquire()
+        msg = copy(self.__message)  # Make a copy that is thread safe
+        self.__message = ""         # Reset the message
+        self.__msgLock.release()
+
+        self.__validMsgLock.acquire()
+        self.__validMessage = False
+        self.__validMsgLock.release()
+        return msg
+    
+    
+    def setMessage(self, msg, wait = False):
+        '''
+        Set the message from GUI to test thread.
+        '''
+        self.__msgLock.acquire()
+        self.__message = copy(msg)  # Make a copy that is thread safe
+        self.__msgLock.release()
+        
+        self.__validMsgLock.acquire()
+        self.__validMessage = True
+        self.__validMsgLock.release()
+        
+        if wait:    # Wait until other thread got the message
+            flag = False
+            while not flag: # TODO: Should have a timeout here?
+                self.__validMsgLock.acquire()
+                if not self.__validMessage: # Other thread got message
+                    flag = True
+                self.__validMsgLock.release()
+        
+        return msg
+
     
     def output(self, text):
         '''
@@ -375,7 +433,6 @@ class Bundle():
         '''
         Start the module test code.
         '''
-        from time import sleep
         if self.__testThread is None:
             self.__testThread = TestThread(self.__testCode, self)
             self.__testThread.start()
@@ -1502,7 +1559,7 @@ class MainFrame(wx.Frame):
             self.__setTestButtons()
             self.textOutput.AppendText("Test suite stopped.\n")
             
-        if event.EventType == EVT_STOP_ID:
+        if event.EventType == EVT_STOP_ID: # This comes from the test thread
             self.textOutput.AppendText(event.data)
             common()
         else:
@@ -1511,6 +1568,8 @@ class MainFrame(wx.Frame):
                                             "Stopping Test",
                                             wx.YES_NO | wx.NO_DEFAULT)
             if msgDlg.ShowModal() == wx.ID_YES:
+                # Send message to test thread and wait for it to get message
+                self.__bundle.setMessage("STOP", True)
                 common()
             else:
                 self.textOutput.AppendText("Test suite still running.\n")

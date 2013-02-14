@@ -32,6 +32,7 @@ class TestThread(threading.Thread):
                     break
                 # No other messages should be sent... but we may need to 
                 # process something else, which is why it's designed this way.
+        return returnMsg
                 
         
     def run(self):

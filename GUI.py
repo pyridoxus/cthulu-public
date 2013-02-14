@@ -276,6 +276,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.eventCodeSaveLocal, id=41)
         self.Bind(wx.EVT_BUTTON, self.eventCodeDone, id=42)
         
+        self.Bind(wx.EVT_CLOSE, self.__cleanExit)
+        
         #Inter-thread communication events
         EVT_RESULT(self, self.__updateGUI)
         EVT_STOP(self, self.eventStopTest)
@@ -1629,7 +1631,15 @@ class MainFrame(wx.Frame):
         self.labelTime.SetLabel(timeText)
         
         
-
+    def __cleanExit(self, event):
+        '''
+        Confirm close, and clean up running threads.
+        '''
+        self.__clockThread.kill()
+        event.Skip()
+        return True
+        
+        
 # end of class MainFrame
 
 

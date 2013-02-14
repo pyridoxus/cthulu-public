@@ -20,6 +20,7 @@ from TreeData import TreeData
 from Bundle import Bundle
 from CustomEvents import EVT_RESULT, EVT_STOP, EVT_STOP_ID
 from TestBuilder import TestBuilder
+from time import sleep
 
 # Resource path
 R = "/home/cmcculloch/Documents/Armada/Lua_Test_System/cthulu/"
@@ -1061,8 +1062,8 @@ class MainFrame(wx.Frame):
                                             wx.YES_NO | wx.NO_DEFAULT)
             if msgDlg.ShowModal() == wx.ID_YES:
                 busyInfo = wx.BusyInfo("Stopping after currently executing test.\n"
-                                       "Please wait...", self)
-
+                                       "Please wait...")
+                wx.Yield()
                 # Send message to test thread and wait for it to get message
                 self.__bundle.setMessage("STOP", True)
                 busyInfo.Destroy()

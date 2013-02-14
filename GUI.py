@@ -1005,6 +1005,19 @@ class MainFrame(wx.Frame):
         self.GetSizer().Layout()
         event.Skip()
 
+    def __busyInfoMessage(self, msg, busyText):
+        '''
+        Send msg to test thread and display a BusyInfo window containing
+        busytext. This will also pause the GUI message loop until the test
+        thread has received the message."
+        '''
+        busyInfo = wx.BusyInfo(busyText)
+        wx.Yield()
+        # Send message to test thread and wait for it to get message
+        self.__bundle.setMessage(msg, True)
+        busyInfo.Destroy()
+        
+        
     def eventStartTest(self, event): # wxGlade: MainFrame.<event_handler>
         '''
         The user wants to start the selected test.
@@ -1012,17 +1025,22 @@ class MainFrame(wx.Frame):
         self.__testState = "RUN"
         self.__setTestButtons()
         self.textOutput.AppendText("Starting or continuing a test suite.\n")
-        root = self.treeTest.GetRootItem()
-        self.__recursiveApply(root, self.__testBuilder.build,
-                              { "bundle" : self.__bundle,
-                                "tree" : self.treeTest })
-        self.__bundle.start()
+        if not self.__bundle.isTestRunning():
+            root = self.treeTest.GetRootItem()
+            self.__recursiveApply(root, self.__testBuilder.build,
+                                  { "bundle" : self.__bundle,
+                                    "tree" : self.treeTest })
+            self.__bundle.start()
+        else:
+            self.__busyInfoMessage("RUN", "Continuing test.\nPlease wait...")
         event.Skip()
 
     def eventPauseTest(self, event): # wxGlade: MainFrame.<event_handler>
         '''
         The user wants to pause the test
         '''
+        self.__busyInfoMessage("PAUSE", "Pausing after currently executing "
+                               "test.\nPlease wait...")
         self.__testState = "PAUSE"
         self.__setTestButtons()
         self.textOutput.AppendText("Test suite paused.\n")
@@ -1061,12 +1079,8 @@ class MainFrame(wx.Frame):
                                             "Stopping Test",
                                             wx.YES_NO | wx.NO_DEFAULT)
             if msgDlg.ShowModal() == wx.ID_YES:
-                busyInfo = wx.BusyInfo("Stopping after currently executing test.\n"
-                                       "Please wait...")
-                wx.Yield()
-                # Send message to test thread and wait for it to get message
-                self.__bundle.setMessage("STOP", True)
-                busyInfo.Destroy()
+                self.__busyInfoMessage("STOP", "Stopping after currently "
+                                       "executing test.\nPlease wait...")
                 common()
             else:
                 self.textOutput.AppendText("Test suite still running.\n")

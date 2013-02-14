@@ -99,7 +99,14 @@ class Bundle():
         Send a signal to stop the test.
         '''
         wx.PostEvent(self.__parent, StopEvent("%s\n" % text))
+        self.__testThread = None
         
+    def isTestRunning(self):
+        ''' Return true if the test thread is active and running. '''
+        state = False
+        if self.__testThread is not None:
+            state = True
+        return state
         
         
     def packTestData(self, state = True):

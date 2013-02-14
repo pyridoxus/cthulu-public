@@ -10,6 +10,7 @@ EVT_RESULT_ID = wx.NewId()
 EVT_STOP_ID = wx.NewId()
 EVT_TIMER_ID = wx.NewId()
 EVT_PROGRESS_ID = wx.NewId()
+EVT_CLOCK_ID = wx.NewId()
 
  
 def EVT_RESULT(win, func):
@@ -38,6 +39,13 @@ def EVT_PROGRESS(win, func):
     Define a Progress Event.
     '''
     win.Connect(-1, -1, EVT_PROGRESS_ID, func)
+
+ 
+def EVT_CLOCK(win, func):
+    '''
+    Define a Clock Event.
+    '''
+    win.Connect(-1, -1, EVT_CLOCK_ID, func)
 
  
 class ResultEvent(wx.PyEvent):
@@ -96,6 +104,23 @@ class ProgressEvent(wx.PyEvent):
         wx.PyEvent.__init__(self)
         self.SetEventType(EVT_PROGRESS_ID)
         self.data = data
+ 
+
+
+class ClockEvent(wx.PyEvent):
+    '''
+    Simple event to tell the GUI to update the clock for both date and time.
+    The data parameter isn't used.
+    '''
+    def __init__(self, dateText, timeText):
+        '''
+        Init Clock Event.
+        '''
+        wx.PyEvent.__init__(self)
+        self.SetEventType(EVT_CLOCK_ID)
+        self.data = {}
+        self.data["date"] = dateText
+        self.data["time"] = timeText
  
 
 

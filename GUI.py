@@ -19,9 +19,11 @@ from math import sqrt
 from TreeData import TreeData
 from Bundle import Bundle
 from CustomEvents import (EVT_RESULT, EVT_STOP, EVT_STOP_ID, EVT_TIMER,
-                          EVT_PROGRESS)
+                          EVT_PROGRESS, EVT_CLOCK)
 from TestBuilder import TestBuilder
 from TimerThread import TimerThread
+from ClockThread import ClockThread
+
 from time import sleep
 
 # Resource path
@@ -214,6 +216,8 @@ class MainFrame(wx.Frame):
         self.__testBuilder = TestBuilder()
         self.__bundle = Bundle(self.textOutput, self)
         self.__timerThread = None
+        self.__clockThread = ClockThread(self)
+        self.__clockThread.start()
         
         self.__showCodeState = False
         
@@ -277,6 +281,7 @@ class MainFrame(wx.Frame):
         EVT_STOP(self, self.eventStopTest)
         EVT_TIMER(self, self.__updateTimer)
         EVT_PROGRESS(self, self.__incrementProgress)
+        EVT_CLOCK(self, self.__updateClock)
         
         # end wxGlade
 
@@ -1612,6 +1617,19 @@ class MainFrame(wx.Frame):
 #        self.gaugeTest.SetBackgroundColour(color)
 #        self.gaugeTest.GetClassDefaultAttributes().color = color
         event.Skip()
+        
+        
+    def __updateClock(self, event):
+        '''
+        Update the GUI clock with current date and time..
+        '''
+        dateText = event.data["date"]
+        timeText = event.data["time"]
+        self.labelDate.SetLabel(dateText)
+        self.labelTime.SetLabel(timeText)
+        
+        
+
 # end of class MainFrame
 
 

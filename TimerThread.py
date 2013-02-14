@@ -41,8 +41,17 @@ class TimerThread(threading.Thread):
         self.__msgLock.acquire()
         message = copy(self.__msg)
         self.__msgLock.release()
+        flag = False
         if message == "STOP":
-            self.__stop()
+            flag = True
+        return flag
+            
+            
+    def __str__(self):
+        ''' Create the elaped time string. '''
+        minutes = int(self.__currentTime / 60.0)
+        seconds = self.__currentTime % 60
+        return "%d:%02d" % (minutes, seconds)
         
         
     def run(self):
@@ -54,8 +63,8 @@ class TimerThread(threading.Thread):
         while True:
             if int(time.time() - self.__startTime) > self.__currentTime:
                 self.__currentTime = time.time() - self.__startTime
-                wx.PostEvent(self.__parent, TimerEvent("%s" %\
-                                                       self.__currentTime))
-            self.getMessage()
+                wx.PostEvent(self.__parent, TimerEvent("%s" % self))
+            if self.getMessage():   # Thread to be killed
+                break
             
         

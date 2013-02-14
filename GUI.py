@@ -733,7 +733,7 @@ class MainFrame(wx.Frame):
                          "from UUT\n\n"
                          "\tbundle.testResult = bundle.validate(bundle) # test "
                          "against limits and save result\n"
-                         "\tsleep(2)  # Just for demo purposes\n"
+                         "\tsleep(.2)  # Just for demo purposes\n"
                          "\tbundle.incrementProgress()"
                          "# Eventually, the results are put in the database\n"
                          "# and the test engine loads another test into the\n"
@@ -1605,6 +1605,12 @@ class MainFrame(wx.Frame):
         Increment the progress bar.
         '''
         self.gaugeTest.SetValue(self.gaugeTest.GetValue() + 1)
+        # This is lame. I cannot change the color of the progress bar.
+        # But, after the test passes or fails, then I can change the
+        # progess bar background to be either red or green...
+#        color = wx.Color(255, 0, 0)
+#        self.gaugeTest.SetBackgroundColour(color)
+#        self.gaugeTest.GetClassDefaultAttributes().color = color
         event.Skip()
 # end of class MainFrame
 

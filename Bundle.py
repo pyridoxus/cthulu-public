@@ -100,6 +100,8 @@ class Bundle():
         '''
         wx.PostEvent(self.__parent, StopEvent("%s\n" % text))
         self.__testThread = None
+        self.__testCode = []    # To force full reload next time we execute
+        
         
     def isTestRunning(self):
         ''' Return true if the test thread is active and running. '''
@@ -134,9 +136,11 @@ class Bundle():
         '''
         Start the module test code.
         '''
+        print "Starting thread"
         if self.__testThread is None:
             self.__testThread = TestThread(self.__testCode, self)
             self.__testThread.start()
+            print "Thread started..."
         else:
             raise RuntimeError("Test thread was not deleted properly")
         

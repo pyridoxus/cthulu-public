@@ -7,7 +7,7 @@ import wx
 from TestThread import TestThread
 import threading
 from copy import copy
-from CustomEvents import ResultEvent, StopEvent
+from CustomEvents import ResultEvent, StopEvent, ProgressEvent
 
 
 class Bundle():
@@ -136,11 +136,9 @@ class Bundle():
         '''
         Start the module test code.
         '''
-        print "Starting thread"
         if self.__testThread is None:
             self.__testThread = TestThread(self.__testCode, self)
             self.__testThread.start()
-            print "Thread started..."
         else:
             raise RuntimeError("Test thread was not deleted properly")
         
@@ -171,4 +169,8 @@ class Bundle():
         self.__testCode.append(module)
         
 
-
+    def incrementProgress(self):
+        '''
+        Increment the progress bar in the GUI.
+        '''
+        wx.PostEvent(self.__parent, ProgressEvent(None))

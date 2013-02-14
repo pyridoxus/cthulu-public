@@ -18,7 +18,8 @@ import wx.grid
 from math import sqrt
 from TreeData import TreeData
 from Bundle import Bundle
-from CustomEvents import EVT_RESULT, EVT_STOP, EVT_STOP_ID, EVT_TIMER
+from CustomEvents import (EVT_RESULT, EVT_STOP, EVT_STOP_ID, EVT_TIMER,
+                          EVT_PROGRESS)
 from TestBuilder import TestBuilder
 from TimerThread import TimerThread
 from time import sleep
@@ -275,6 +276,7 @@ class MainFrame(wx.Frame):
         EVT_RESULT(self, self.__updateGUI)
         EVT_STOP(self, self.eventStopTest)
         EVT_TIMER(self, self.__updateTimer)
+        EVT_PROGRESS(self, self.__incrementProgress)
         
         # end wxGlade
 
@@ -1567,22 +1569,32 @@ class MainFrame(wx.Frame):
         event.Skip()
 
 
-    def __updateGUI(self, msg):
+    def __updateGUI(self, event):
         '''
         Receives data from thread and updates the textOutput (if text)
         '''
-        t = msg.data
+        t = event.data
         if isinstance(t, int):
             pass
         else:
             self.textOutput.AppendText(t)
+        event.Skip()
 
 
     def __updateTimer(self, event):
         '''
         Update the GUI timer with the data in the event.
         '''
-        self.labelTestTime.SetLabel("%s" % event.data) 
+        self.labelTestTime.SetLabel("%s" % event.data)
+        event.Skip()
+        
+        
+    def __incrementProgress(self, event):
+        '''
+        Increment the progress bar.
+        '''
+        self.gaugeTest.SetValue(self.gaugeTest.GetValue() + 1)
+        event.Skip()
 # end of class MainFrame
 
 

@@ -9,6 +9,7 @@ import wx
 EVT_RESULT_ID = wx.NewId()
 EVT_STOP_ID = wx.NewId()
 EVT_TIMER_ID = wx.NewId()
+EVT_PROGRESS_ID = wx.NewId()
 
  
 def EVT_RESULT(win, func):
@@ -30,6 +31,13 @@ def EVT_TIMER(win, func):
     Define a Timer Event.
     '''
     win.Connect(-1, -1, EVT_TIMER_ID, func)
+
+ 
+def EVT_PROGRESS(win, func):
+    '''
+    Define a Progress Event.
+    '''
+    win.Connect(-1, -1, EVT_PROGRESS_ID, func)
 
  
 class ResultEvent(wx.PyEvent):
@@ -72,6 +80,22 @@ class TimerEvent(wx.PyEvent):
         wx.PyEvent.__init__(self)
         self.SetEventType(EVT_TIMER_ID)
         self.data = data    # The text containing the elapsed time
+ 
+
+
+class ProgressEvent(wx.PyEvent):
+    '''
+    Simple event to tell the GUI to increment the progress bar.
+    The data parameter isn't used at the moment because we are incrementing
+    the progress bar by one.
+    '''
+    def __init__(self, data):
+        '''
+        Init Progress Event.
+        '''
+        wx.PyEvent.__init__(self)
+        self.SetEventType(EVT_PROGRESS_ID)
+        self.data = data
  
 
 

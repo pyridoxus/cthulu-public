@@ -734,6 +734,7 @@ class MainFrame(wx.Frame):
                          "\tbundle.testResult = bundle.validate(bundle) # test "
                          "against limits and save result\n"
                          "\tsleep(2)  # Just for demo purposes\n"
+                         "\tbundle.incrementProgress()"
                          "# Eventually, the results are put in the database\n"
                          "# and the test engine loads another test into the\n"
                          "# bundle to be executed\n" # returns to the bundle
@@ -782,6 +783,7 @@ class MainFrame(wx.Frame):
         self.treeTest.SetItemFont(tempID0, self.__fixedFont)
         self.treeTest.SetPyData(tempID0, TreeData(fullName,
                                                   "", "", "", "", False, False))
+        progressRange = 0
         for j in range(5):
             tempID1 = self.treeTest.AppendItem(tempID0, "TestBlock%s" % j)
             fullName = self.__treeBranchFormPath(tempID1)
@@ -803,6 +805,14 @@ class MainFrame(wx.Frame):
                                                  fakeTestCode[2],
                                                  fakeTestCode[3],
                                                  False, False))
+                # In reality, the number of steps will be retrieved from 
+                # the database because it may be possible for some test
+                # modules to be very long and will need to notify the user
+                # that the test is still running.
+                # For demo purposes, we will just increment a counter
+                # and then set the progress bar range.
+                progressRange += 1
+        self.gaugeTest.SetRange(progressRange)
 
         
     def __showCodePanel(self):
@@ -1080,6 +1090,7 @@ class MainFrame(wx.Frame):
             self.__setTestButtons()
             self.textOutput.AppendText("Test suite stopped.\n")
             self.__timerThread.setMessage("STOP")
+            self.gaugeTest.SetValue(0)
             
         if event.EventType == EVT_STOP_ID: # This comes from the test thread
             self.textOutput.AppendText(event.data)

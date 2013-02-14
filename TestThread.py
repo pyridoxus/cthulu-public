@@ -51,7 +51,6 @@ class TestThread(threading.Thread):
                     if self.__pause() == "STOP":    # User stopped test
                         returnMsg = "User stopped the test."
                         break
-            self.__bundle.incrementProgress()
                         
                 
         self.__bundle.stop(returnMsg)

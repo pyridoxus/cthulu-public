@@ -150,7 +150,7 @@ class MainFrame(wx.Frame):
         self.comboSkippedTests = wx.ComboBox(self, -1,
                                              choices=[], style=wx.CB_DROPDOWN)
         self.gaugeTest = wx.Gauge(self, -1, 1000)
-        self.labelTestTime = wx.StaticText(self, -1, "00:00")
+        self.labelTestTime = wx.StaticText(self, -1, "0:00")
         self.buttonTestStart = wx.BitmapButton(self, -1,
                                             wx.Bitmap("%sagt_forward.png" % R,
                                                       wx.BITMAP_TYPE_ANY),
@@ -533,8 +533,8 @@ class MainFrame(wx.Frame):
         skippedTestsSizer.Add(self.comboSkippedTests, 0, 0, 0)
         testControl1Sizer.Add(skippedTestsSizer, 1, wx.ALL|wx.EXPAND, 4)
         testMainControlSizer.Add(testControl1Sizer, 0, wx.EXPAND, 0)
-        timingSizer.Add(self.gaugeTest, 1, wx.ALL|wx.EXPAND, 4)
-        timingSizer.Add(self.labelTestTime, 0,
+        timingSizer.Add(self.gaugeTest, 3, wx.ALL|wx.EXPAND, 4)
+        timingSizer.Add(self.labelTestTime, 1,
                         wx.ALL|wx.ALIGN_CENTER_VERTICAL, 4)
         testControl2Sizer.Add(timingSizer, 1, wx.EXPAND, 0)
         testControl2ASizer.Add(self.buttonTestStart, 0,
@@ -617,7 +617,7 @@ class MainFrame(wx.Frame):
         self.comboBreakPoints.SetValue("None")
         self.comboSkippedTests.SetValue("None")
         self.gaugeTest.SetValue(0)
-        self.labelTestTime.SetLabel("00:00")
+        self.labelTestTime.SetLabel("0:00")
         self.__testState = "STOP"
         self.__setTestButtons()
         

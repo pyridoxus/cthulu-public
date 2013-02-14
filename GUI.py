@@ -18,8 +18,9 @@ import wx.grid
 from math import sqrt
 from TreeData import TreeData
 from Bundle import Bundle
-from CustomEvents import EVT_RESULT, EVT_STOP, EVT_STOP_ID
+from CustomEvents import EVT_RESULT, EVT_STOP, EVT_STOP_ID, EVT_TIMER
 from TestBuilder import TestBuilder
+from TimerThread import TimerThread
 from time import sleep
 
 # Resource path
@@ -211,6 +212,7 @@ class MainFrame(wx.Frame):
         
         self.__testBuilder = TestBuilder()
         self.__bundle = Bundle(self.textOutput, self)
+        self.__timerThread = None
         
         self.__showCodeState = False
         
@@ -272,6 +274,7 @@ class MainFrame(wx.Frame):
         #Inter-thread communication events
         EVT_RESULT(self, self.__updateGUI)
         EVT_STOP(self, self.eventStopTest)
+        EVT_TIMER(self, self.__updateTimer)
         
         # end wxGlade
 
@@ -1031,6 +1034,11 @@ class MainFrame(wx.Frame):
                                   { "bundle" : self.__bundle,
                                     "tree" : self.treeTest })
             self.__bundle.start()
+            if self.__timerThread is not None:
+                self.__timerThread.setMessage("STOP")
+                self.__timerThread = None
+            self.__timerThread = TimerThread(self)
+            self.__timerThread.start()
         else:
             self.__busyInfoMessage("RUN", "Continuing test.\nPlease wait...")
         event.Skip()
@@ -1069,6 +1077,7 @@ class MainFrame(wx.Frame):
             self.__testState = "STOP"
             self.__setTestButtons()
             self.textOutput.AppendText("Test suite stopped.\n")
+            self.__timerThread.setMessage("STOP")
             
         if event.EventType == EVT_STOP_ID: # This comes from the test thread
             self.textOutput.AppendText(event.data)
@@ -1565,12 +1574,15 @@ class MainFrame(wx.Frame):
         t = msg.data
         if isinstance(t, int):
             pass
-#            self.displayLbl.SetLabel("Time since thread started: %s seconds" % t)
         else:
             self.textOutput.AppendText(t)
-#            self.displayLbl.SetLabel("%s" % t)
-#            self.btn.Enable()
 
+
+    def __updateTimer(self, event):
+        '''
+        Update the GUI timer with the data in the event.
+        '''
+        self.labelTestTime.SetLabel("%s" % event.data) 
 # end of class MainFrame
 
 

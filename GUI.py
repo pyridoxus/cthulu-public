@@ -764,14 +764,12 @@ class MainFrame(wx.Frame):
                          "from UUT\n\n"
                          "\tbundle.testResult = bundle.validate(bundle) # test "
                          "against limits and save result\n"
-                         "\tbundle.networkNotify(False)\n"
                          "\tsleep(1)  # Just for demo purposes\n"
                          "\tbundle.incrementProgress()"
                          "# Eventually, the results are put in the database\n"
                          "# and the test engine loads another test into the\n"
                          "# bundle to be executed\n" # returns to the bundle
                          "\tbundle.DBNotify()\n"
-                         "\tbundle.networkNotify(True)\n"
                          "\tsleep(1)\n"
                          ,
 
@@ -1713,9 +1711,12 @@ class MainFrame(wx.Frame):
         '''
         Change network notification icon according to state of data in event.
         '''
-        if event.data:
+        # event.data is either False or contains the IP address string 
+        if event.data is not False:
             self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_established.png" % R,
                                                     wx.BITMAP_TYPE_ANY))
+            self.bitmapNetwork.SetToolTipString("Connected to network at %s" %\
+                                                event.data)
         else:
             self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_no.png" % R,
                                                     wx.BITMAP_TYPE_ANY))

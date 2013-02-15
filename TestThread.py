@@ -30,6 +30,9 @@ class TestThread(threading.Thread):
                 if msg == "RUN":
                     returnMsg = "RUN"
                     break
+                if msg == "STEP":
+                    returnMsg = "STEP"
+                    break
                 # No other messages should be sent... but we may need to 
                 # process something else, which is why it's designed this way.
         return returnMsg
@@ -40,7 +43,9 @@ class TestThread(threading.Thread):
         Start running the stored test modules.
         '''
         returnMsg = "Test finished normally"
-        for module in self.__code:
+        i = iter(self.__code)
+        while True:
+            module = i.next()
             module.run()
             if self.__bundle.haveMessage():
                 msg = self.__bundle.getMessage()
@@ -48,10 +53,15 @@ class TestThread(threading.Thread):
                     returnMsg = "User stopped the test."
                     break
                 if msg == "PAUSE":
-                    if self.__pause() == "STOP":    # User stopped test
+                    pauseMsg = ""
+                    while pauseMsg != "STOP":
+                        pauseMsg = self.__pause()
+                        if pauseMsg == "STEP":
+                            module = i.next()
+                            module.run()
+                    if pauseMsg == "STOP":    # User stopped test
                         returnMsg = "User stopped the test."
                         break
-                        
                 
         self.__bundle.stop(returnMsg)
     

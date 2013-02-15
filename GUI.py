@@ -692,6 +692,13 @@ class MainFrame(wx.Frame):
             self.sliderRepeatSpeed.Show(True)
             self.sliderRepeatSpeed.SetValue(sqrt(self.__repeatSpeed))
             self.buttonTestStop.Enable(True)
+        elif self.__testState == "STEP":
+            print "Buttons set for step"
+            self.buttonTestStart.Enable(False)
+            self.buttonTestPause.Enable(False)
+            self.buttonTestStep.Enable(False)
+            self.buttonTestRepeat.Enable(False)
+            self.buttonTestStop.Enable(False)
         else:
             # Default to all buttons active so that something useful may happen
             # even though only a bug should cause this to happen.
@@ -1117,13 +1124,13 @@ class MainFrame(wx.Frame):
         '''
         The user is stepping through the test modules.
         '''
+        self.__testState = "STEP"
+        self.__setTestButtons()
         self.textOutput.AppendText("Stepping through test suite.\n")
-        msgDlg = wx.MessageDialog(self, "Stepping through the test modules "
-                                        "happens here.",
-                                        "Stepping Through Test",
-                                        wx.YES_NO | wx.NO_DEFAULT)
-        msgDlg.ShowModal()
-        msgDlg.Destroy()
+        self.__bundle.setMessage("STEP", True)
+        self.textOutput.AppendText("Pausing test suite.\n")
+        self.__testState = "PAUSE"
+        self.__setTestButtons()
         event.Skip()
 
     def eventStopTest(self, event): # wxGlade: MainFrame.<event_handler>

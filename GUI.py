@@ -85,6 +85,7 @@ class MainFrame(wx.Frame):
                                               wx.BITMAP_TYPE_ANY))
         self.labelDate = wx.StaticText(self, -1, "Wed Nov 21")
         self.labelTime = wx.StaticText(self, -1, "11:48 AM")
+        self.checkboxDate = wx.CheckBox(self, 45, "Select date")
         self.checkboxDateRange = wx.CheckBox(self, -1, "Select date range")
         self.labelDBServer = wx.StaticText(self, -1, "DB Server:",
                                            style=wx.ALIGN_RIGHT)
@@ -247,6 +248,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.eventHelp, id=43)
         self.Bind(wx.EVT_CHECKBOX, self.eventCheckBoxDateRange,
                   self.checkboxDateRange)
+        self.Bind(wx.EVT_CHECKBOX, self.eventCheckBoxDate,
+                  self.checkboxDate)
         self.Bind(wx.EVT_BUTTON, self.eventQuery, self.buttonQuery)
         self.Bind(wx.EVT_BUTTON, self.eventDBResetGUI, self.buttonDBResetGUI)
         self.Bind(wx.EVT_BUTTON, self.eventCreateCerts, self.buttonCreateCerts)
@@ -317,6 +320,7 @@ class MainFrame(wx.Frame):
         self.bitmapNetwork.SetToolTipString("Connected to network at W.X.Y.Z")
         self.labelTime.SetFont(wx.Font(16, wx.DEFAULT, wx.NORMAL, wx.NORMAL,
                                        0, "Sans"))
+        self.checkboxDate.SetToolTipString("Select a date")
         self.checkboxDateRange.SetToolTipString("Select a date (unchecked) "
                                                 "or date range (checked)")
         self.labelDBServer.SetMinSize((96, 17))
@@ -471,7 +475,10 @@ class MainFrame(wx.Frame):
         indicatorSizer.Add(dateTimeSizer, 0, 0, 0)
         titleSizer.Add(indicatorSizer, 0, wx.EXPAND, 0)
         mainSizer.Add(titleSizer, 0, wx.EXPAND, 0)
-        dbTitleSizer.Add(self.checkboxDateRange, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        dbTitleSizer.Add(self.checkboxDate, 0,
+                         wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 150)
+        dbTitleSizer.Add(self.checkboxDateRange, 0,
+                         wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 75)
         dbSizer.Add(dbTitleSizer, 0, wx.ALIGN_RIGHT, 0)
         selectDBSizer.Add(self.labelDBServer, 0,
                           wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
@@ -602,7 +609,10 @@ class MainFrame(wx.Frame):
         '''
         Reset the state of the database GUI.
         '''
+        self.checkboxDate.SetValue(False)
         self.checkboxDateRange.SetValue(False)
+        self.checkboxDateRange.Enable(False)
+        self.calendarStartDate.Enable(False)
         self.calendarEndDate.Enable(False)
         now = wx.DateTime()
         self.calendarStartDate.SetDate(now.Now())
@@ -925,11 +935,30 @@ class MainFrame(wx.Frame):
         '''
         User checked the date range box. This toggles the end calendar enable.
         '''
+        # This if-else structure may need other things to happen in the future,
+        # which is why I'm not just setting the enable with the value....
         if self.checkboxDateRange.GetValue() == True:
             self.calendarEndDate.Enable(True)
         else:
             self.calendarEndDate.Enable(False)
         self.textOutput.AppendText("User touched the Date Range check box.\n")
+        event.Skip()
+        
+        
+    def eventCheckBoxDate(self, event):
+        '''
+        User checked the date box. This toggles the main calendar enable
+        and the date range checkbox.
+        '''
+        if self.checkboxDate.GetValue() == True:
+            self.calendarStartDate.Enable(True)
+            self.checkboxDateRange.Enable(True)
+            self.calendarEndDate.Enable(self.checkboxDateRange.GetValue())
+        else:
+            self.calendarEndDate.Enable(False)
+            self.calendarStartDate.Enable(False)
+            self.checkboxDateRange.Enable(False)
+        self.textOutput.AppendText("User touched the Date check box.\n")
         event.Skip()
 
     def eventQuery(self, event): # wxGlade: MainFrame.<event_handler>

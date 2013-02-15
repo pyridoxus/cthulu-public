@@ -1092,12 +1092,12 @@ class MainFrame(wx.Frame):
             self.__recursiveApply(root, self.__testBuilder.build,
                                   { "bundle" : self.__bundle,
                                     "tree" : self.treeTest })
-            self.__bundle.start()
             if self.__timerThread is not None:
                 self.__timerThread.setMessage("STOP")
                 self.__timerThread = None
             self.__timerThread = TimerThread(self)
             self.__timerThread.start()
+            self.__bundle.start()
         else:
             self.__busyInfoMessage("RUN", "Continuing test.\nPlease wait...")
         event.Skip()
@@ -1136,7 +1136,9 @@ class MainFrame(wx.Frame):
             self.__testState = "STOP"
             self.__setTestButtons()
             self.textOutput.AppendText("Test suite stopped.\n")
-            self.__timerThread.setMessage("STOP")
+            if self.__timerThread is not None:
+                self.__timerThread.setMessage("STOP")
+                self.__timerThread = None
             self.gaugeTest.SetValue(0)
             
         if event.EventType == EVT_STOP_ID: # This comes from the test thread
@@ -1675,9 +1677,18 @@ class MainFrame(wx.Frame):
         '''
         Confirm close, and clean up running threads.
         '''
+        busyInfo = wx.BusyInfo("Cleaning up...\nPlease wait...")
+        wx.Yield()
+        # Send message to test thread and wait for it to get message
+        if self.__bundle.isTestRunning():
+            self.__bundle.setMessage("STOP", True)
         self.__clockThread.kill()
         self.__notifyThread.kill()
+        if self.__timerThread is not None:
+            self.__timerThread.setMessage("STOP")
+        sleep(1)
         event.Skip()
+        busyInfo.Destroy()
         return True
         
 

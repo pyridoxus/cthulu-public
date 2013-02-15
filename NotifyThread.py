@@ -78,7 +78,6 @@ class NotifyThread(threading.Thread):
             if self.__kill:
                 break
             sleep(0.1)   # We don't need to loop constantly
-            print "Notify thread is running"
             message = self.__getMsg()
             if message == "DATABASE":
                 self.__toggleDatabaseNotify()

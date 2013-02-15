@@ -20,7 +20,7 @@ from TreeData import TreeData
 from Bundle import Bundle
 from CustomEvents import (EVT_RESULT, EVT_STOP, EVT_STOP_ID, EVT_TIMER,
                           EVT_PROGRESS, EVT_CLOCK, EVT_DATABASE_NOTIFY,
-                          EVT_NETWORK_NOTIFY)
+                          EVT_NETWORK_NOTIFY, EVT_END_STEP)
 from TestBuilder import TestBuilder
 from TimerThread import TimerThread
 from ClockThread import ClockThread
@@ -294,6 +294,7 @@ class MainFrame(wx.Frame):
         EVT_CLOCK(self, self.__updateClock)
         EVT_DATABASE_NOTIFY(self, self.__databaseNotify)
         EVT_NETWORK_NOTIFY(self, self.__networkNotify)
+        EVT_END_STEP(self, self.__endStep)
         
         # end wxGlade
 
@@ -693,12 +694,11 @@ class MainFrame(wx.Frame):
             self.sliderRepeatSpeed.SetValue(sqrt(self.__repeatSpeed))
             self.buttonTestStop.Enable(True)
         elif self.__testState == "STEP":
-            print "Buttons set for step"
             self.buttonTestStart.Enable(False)
             self.buttonTestPause.Enable(False)
             self.buttonTestStep.Enable(False)
             self.buttonTestRepeat.Enable(False)
-            self.buttonTestStop.Enable(False)
+            self.buttonTestStop.Enable(True)
         else:
             # Default to all buttons active so that something useful may happen
             # even though only a bug should cause this to happen.
@@ -1128,9 +1128,6 @@ class MainFrame(wx.Frame):
         self.__setTestButtons()
         self.textOutput.AppendText("Stepping through test suite.\n")
         self.__bundle.setMessage("STEP", True)
-        self.textOutput.AppendText("Pausing test suite.\n")
-        self.__testState = "PAUSE"
-        self.__setTestButtons()
         event.Skip()
 
     def eventStopTest(self, event): # wxGlade: MainFrame.<event_handler>
@@ -1709,6 +1706,7 @@ class MainFrame(wx.Frame):
         else:
             self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdatabase.png" % R,
                                                         wx.BITMAP_TYPE_ANY))
+        event.Skip()
     
     
     def __networkNotify(self, event):
@@ -1721,6 +1719,17 @@ class MainFrame(wx.Frame):
         else:
             self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_no.png" % R,
                                                     wx.BITMAP_TYPE_ANY))
+        event.Skip()
+        
+        
+    def __endStep(self, event):
+        '''
+        Change state of GUI because the step has completed.
+        '''
+        self.textOutput.AppendText("Pausing test suite.\n")
+        self.__testState = "PAUSE"
+        self.__setTestButtons()
+        event.Skip()
         
         
 # end of class MainFrame

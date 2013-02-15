@@ -13,6 +13,7 @@ EVT_PROGRESS_ID = wx.NewId()
 EVT_CLOCK_ID = wx.NewId()
 EVT_DATABASE_NOTIFY_ID = wx.NewId()
 EVT_NETWORK_NOTIFY_ID = wx.NewId()
+EVT_END_STEP_ID = wx.NewId()
 
  
 def EVT_RESULT(win, func):
@@ -62,6 +63,13 @@ def EVT_NETWORK_NOTIFY(win, func):
     Define a Network Notify Event.
     '''
     win.Connect(-1, -1, EVT_NETWORK_NOTIFY_ID, func)
+
+ 
+def EVT_END_STEP(win, func):
+    '''
+    Define a End Step Event.
+    '''
+    win.Connect(-1, -1, EVT_END_STEP_ID, func)
 
  
 class ResultEvent(wx.PyEvent):
@@ -164,6 +172,20 @@ class NetworkNotifyEvent(wx.PyEvent):
         '''
         wx.PyEvent.__init__(self)
         self.SetEventType(EVT_NETWORK_NOTIFY_ID)
+        self.data = state
+ 
+
+
+class EndStepEvent(wx.PyEvent):
+    '''
+    Simple event to tell the GUI to update the test buttons after a step icon.
+    '''
+    def __init__(self, state):
+        '''
+        Init End Step Event.
+        '''
+        wx.PyEvent.__init__(self)
+        self.SetEventType(EVT_END_STEP_ID)
         self.data = state
  
 

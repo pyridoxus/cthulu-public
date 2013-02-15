@@ -3,7 +3,6 @@ Created on Feb 13, 2013
 
 @author: cmcculloch
 '''
-
 import threading
 
 class TestThread(threading.Thread):
@@ -53,12 +52,13 @@ class TestThread(threading.Thread):
                     returnMsg = "User stopped the test."
                     break
                 if msg == "PAUSE":
-                    pauseMsg = ""
-                    while pauseMsg != "STOP":
-                        pauseMsg = self.__pause()
+                    pauseMsg = self.__pause()
+                    while pauseMsg == "STEP":
                         if pauseMsg == "STEP":
                             module = i.next()
                             module.run()
+                        self.__bundle.endStep()
+                        pauseMsg = self.__pause()
                     if pauseMsg == "STOP":    # User stopped test
                         returnMsg = "User stopped the test."
                         break

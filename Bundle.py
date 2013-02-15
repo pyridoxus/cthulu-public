@@ -8,6 +8,7 @@ from TestThread import TestThread
 import threading
 from copy import copy
 from CustomEvents import ResultEvent, StopEvent, ProgressEvent
+from CustomEvents import EndStepEvent
 
 
 class Bundle():
@@ -200,3 +201,10 @@ class Bundle():
             self.__notifyThread.setMsg("NETWORK ON")
         else:
             self.__notifyThread.setMsg("NETWORK OFF")
+
+
+    def endStep(self):
+        '''
+        Tell the GUI that the step is over.
+        '''
+        wx.PostEvent(self.__parent, EndStepEvent(True))

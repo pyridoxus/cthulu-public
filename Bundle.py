@@ -39,6 +39,7 @@ class Bundle():
         self.__validMessage = False         # Flag for a valid message present
         self.__msgLock = threading.Lock()   # Message lock
         self.__validMsgLock = threading.Lock()  # Flag lock
+        self.__notifyThread = None          # Will be the notification thread
         
         
     def haveMessage(self):
@@ -174,3 +175,28 @@ class Bundle():
         Increment the progress bar in the GUI.
         '''
         wx.PostEvent(self.__parent, ProgressEvent(None))
+
+
+    def setNotificationThread(self, notifyThread):
+        '''
+        Sets the notification thread so that the test code can modify the
+        state of the notifications when necessary.
+        '''
+        self.__notifyThread = notifyThread
+        
+        
+    def DBNotify(self):
+        '''
+        Toggle the database notification icon.
+        '''
+        self.__notifyThread.setMsg("DATABASE")
+        
+        
+    def networkNotify(self, state):
+        '''
+        Set the network notification icon according to state parameter.
+        '''
+        if state:
+            self.__notifyThread.setMsg("NETWORK ON")
+        else:
+            self.__notifyThread.setMsg("NETWORK OFF")

@@ -19,7 +19,8 @@ from math import sqrt
 from TreeData import TreeData
 from Bundle import Bundle
 from CustomEvents import (EVT_RESULT, EVT_STOP, EVT_STOP_ID, EVT_TIMER,
-                          EVT_PROGRESS, EVT_CLOCK)
+                          EVT_PROGRESS, EVT_CLOCK, EVT_DATABASE_NOTIFY,
+                          EVT_NETWORK_NOTIFY)
 from TestBuilder import TestBuilder
 from TimerThread import TimerThread
 from ClockThread import ClockThread
@@ -222,6 +223,7 @@ class MainFrame(wx.Frame):
         self.__clockThread.start()
         self.__notifyThread = NotifyThread(self)
         self.__notifyThread.start()
+        self.__bundle.setNotificationThread(self.__notifyThread)
         
         self.__showCodeState = False
         
@@ -290,6 +292,8 @@ class MainFrame(wx.Frame):
         EVT_TIMER(self, self.__updateTimer)
         EVT_PROGRESS(self, self.__incrementProgress)
         EVT_CLOCK(self, self.__updateClock)
+        EVT_DATABASE_NOTIFY(self, self.__databaseNotify)
+        EVT_NETWORK_NOTIFY(self, self.__networkNotify)
         
         # end wxGlade
 
@@ -753,11 +757,15 @@ class MainFrame(wx.Frame):
                          "from UUT\n\n"
                          "\tbundle.testResult = bundle.validate(bundle) # test "
                          "against limits and save result\n"
-                         "\tsleep(.2)  # Just for demo purposes\n"
+                         "\tbundle.networkNotify(False)\n"
+                         "\tsleep(1)  # Just for demo purposes\n"
                          "\tbundle.incrementProgress()"
                          "# Eventually, the results are put in the database\n"
                          "# and the test engine loads another test into the\n"
                          "# bundle to be executed\n" # returns to the bundle
+                         "\tbundle.DBNotify()\n"
+                         "\tbundle.networkNotify(True)\n"
+                         "\tsleep(1)\n"
                          ,
 
                          "def validate(bundle):\n"
@@ -1671,6 +1679,30 @@ class MainFrame(wx.Frame):
         self.__notifyThread.kill()
         event.Skip()
         return True
+        
+
+    def __databaseNotify(self, event):
+        '''
+        Change database notification icon according to state of data in event.
+        '''
+        if event.data:
+            self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdb_comit.png" % R,
+                                                    wx.BITMAP_TYPE_ANY))
+        else:
+            self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdatabase.png" % R,
+                                                        wx.BITMAP_TYPE_ANY))
+    
+    
+    def __networkNotify(self, event):
+        '''
+        Change network notification icon according to state of data in event.
+        '''
+        if event.data:
+            self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_established.png" % R,
+                                                    wx.BITMAP_TYPE_ANY))
+        else:
+            self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_no.png" % R,
+                                                    wx.BITMAP_TYPE_ANY))
         
         
 # end of class MainFrame

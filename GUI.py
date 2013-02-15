@@ -23,6 +23,7 @@ from CustomEvents import (EVT_RESULT, EVT_STOP, EVT_STOP_ID, EVT_TIMER,
 from TestBuilder import TestBuilder
 from TimerThread import TimerThread
 from ClockThread import ClockThread
+from NotifyThread import NotifyThread
 
 from time import sleep
 
@@ -219,6 +220,8 @@ class MainFrame(wx.Frame):
         self.__timerThread = None
         self.__clockThread = ClockThread(self)
         self.__clockThread.start()
+        self.__notifyThread = NotifyThread(self)
+        self.__notifyThread.start()
         
         self.__showCodeState = False
         
@@ -1665,6 +1668,7 @@ class MainFrame(wx.Frame):
         Confirm close, and clean up running threads.
         '''
         self.__clockThread.kill()
+        self.__notifyThread.kill()
         event.Skip()
         return True
         

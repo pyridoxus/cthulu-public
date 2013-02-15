@@ -11,6 +11,8 @@ EVT_STOP_ID = wx.NewId()
 EVT_TIMER_ID = wx.NewId()
 EVT_PROGRESS_ID = wx.NewId()
 EVT_CLOCK_ID = wx.NewId()
+EVT_DATABASE_NOTIFY_ID = wx.NewId()
+EVT_NETWORK_NOTIFY_ID = wx.NewId()
 
  
 def EVT_RESULT(win, func):
@@ -46,6 +48,20 @@ def EVT_CLOCK(win, func):
     Define a Clock Event.
     '''
     win.Connect(-1, -1, EVT_CLOCK_ID, func)
+
+ 
+def EVT_DATABASE_NOTIFY(win, func):
+    '''
+    Define a Database Notify Event.
+    '''
+    win.Connect(-1, -1, EVT_DATABASE_NOTIFY_ID, func)
+
+ 
+def EVT_NETWORK_NOTIFY(win, func):
+    '''
+    Define a Network Notify Event.
+    '''
+    win.Connect(-1, -1, EVT_NETWORK_NOTIFY_ID, func)
 
  
 class ResultEvent(wx.PyEvent):
@@ -121,6 +137,34 @@ class ClockEvent(wx.PyEvent):
         self.data = {}
         self.data["date"] = dateText
         self.data["time"] = timeText
+ 
+
+
+class DatabseNotifyEvent(wx.PyEvent):
+    '''
+    Simple event to tell the GUI to update the database notification icon.
+    '''
+    def __init__(self, state):
+        '''
+        Init Database Notification Event.
+        '''
+        wx.PyEvent.__init__(self)
+        self.SetEventType(EVT_DATABASE_NOTIFY_ID)
+        self.data = state # If state is true, then the icon will show active
+ 
+
+
+class NetworkNotifyEvent(wx.PyEvent):
+    '''
+    Simple event to tell the GUI to update the network notification icon.
+    '''
+    def __init__(self, state):
+        '''
+        Init Network Notification Event.
+        '''
+        wx.PyEvent.__init__(self)
+        self.SetEventType(EVT_NETWORK_NOTIFY_ID)
+        self.data = state
  
 
 

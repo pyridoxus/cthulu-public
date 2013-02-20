@@ -44,7 +44,10 @@ class TestThread(threading.Thread):
         returnMsg = "Test finished normally"
         i = iter(self.__code)
         while True:
-            module = i.next()
+            try:
+                module = i.next()
+            except StopIteration:
+                break
             module.run()
             if self.__bundle.haveMessage():
                 msg = self.__bundle.getMessage()

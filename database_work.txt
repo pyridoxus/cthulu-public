@@ -436,3 +436,50 @@ cthulu=# select * from test_suites;
 cthulu=# insert into suites_blocks values (2, 1, 1);
 INSERT 0 1
 (NOTE: The next available key must have been incremented even though it was never really used during the first error)
+cthulu=# insert into module_ordinal values (default, 1, default);
+INSERT 0 1
+
+cthulu=# insert into limit_units values (default, 's', 'second', 8);
+ERROR:  insert or update on table "limit_units" violates foreign key constraint "limit_units_object_data_key_fkey"
+DETAIL:  Key (object_data_key)=(8) is not present in table "object_data".
+cthulu=# insert into object_data values (default, 'Time Second', 'This is a unit of measure.', now(), 1, 'This is the first version. No changes to report.', 1, 8); INSERT 0 1
+cthulu=# insert into limit_units values (default, 's', 'second', 8);                                                                  ERROR:  insert or update on table "limit_units" violates foreign key constraint "limit_units_object_data_key_fkey"
+DETAIL:  Key (object_data_key)=(8) is not present in table "object_data".
+cthulu=# insert into limit_units values (default, 's', 'second', 3);
+INSERT 0 1
+cthulu=# select * from limit_units;
+ limit_unit_key | limit_unit_abbr | limit_unit_desc | object_data_key 
+----------------+-----------------+-----------------+-----------------
+              3 | s               | second          |               3
+(1 row)
+
+cthulu=# insert into object_data values (default, 'Voltage Volt', 'This is a unit of measure.', now(), 1, 'This is the first version. No changes to report.', 1, 8);
+INSERT 0 1
+cthulu=# insert into limit_units values (default, 'V', 'Volt', 4);
+INSERT 0 1
+cthulu=# insert into object_data values (default, 'Voltage Millivolt', 'This is a unit of measure.', now(), 1, 'This is the first version. No changes to report.', 1, 8);
+INSERT 0 1
+cthulu=# insert into limit_units values (default, 'mV', 'Millivolt', 5);
+INSERT 0 1
+cthulu=# insert into object_data values (default, 'Example Parameter Script 1', 'This is an example parameter script.', now(), 1, 'This is the first version. No changes to report.', 1, 1);
+INSERT 0 1
+cthulu=# insert into object_data values (default, 'Example Module Script', 'This is an example module script. This is the the entry point of the test module. It can be thought of as main(), for those of you who enjoy C.', now(), 1, 'This is the first version. No changes to report.', 1, 1);
+INSERT 0 1
+cthulu=# insert into object_data values (default, 'Example Validator Script', 'This is an example validator script.', now(), 1, 'This is the first version. No changes to report.', 1, 1); INSERT 0 1
+cthulu=# insert into object_data values (default, 'Example Limit Script', 'This is an example limit script.', now(), 1, 'This is the first version. No changes to report.', 1, 1);
+INSERT 0 1
+cthulu=# select * from object_data;
+
+ object_data_key |        object_name         |                                                               object_description                                                                |      object_date_created      | object_version |               object_version_notes               | object_author_key | object_type_key 
+-----------------+----------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------+----------------+--------------------------------------------------+-------------------+-----------------
+               1 | Example Test Suite         | This is just an example test suite.                                                                                                             | 2013-02-22 13:44:52.31621-06  |              1 | This is the first version. No changes to report. |                 1 |               5
+               2 | First Example Test Block   | This is an example test block. This could be the entire collection of tests for one section of the device (input/output/etc).                   | 2013-02-22 13:53:37.092381-06 |              1 | This is the first version. No changes to report. |                 1 |               6
+               3 | Time Second                | This is a unit of measure.                                                                                                                      | 2013-02-22 14:09:00.560295-06 |              1 | This is the first version. No changes to report. |                 1 |               8
+               4 | Voltage Volt               | This is a unit of measure.                                                                                                                      | 2013-02-22 14:09:59.107514-06 |              1 | This is the first version. No changes to report. |                 1 |               8
+               5 | Voltage Millivolt          | This is a unit of measure.                                                                                                                      | 2013-02-22 14:10:34.276342-06 |              1 | This is the first version. No changes to report. |                 1 |               8
+               6 | Example Parameter Script 1 | This is an example parameter script.                                                                                                            | 2013-02-22 14:14:41.692879-06 |              1 | This is the first version. No changes to report. |                 1 |               1
+               7 | Example Module Script      | This is an example module script. This is the the entry point of the test module. It can be thought of as main(), for those of you who enjoy C. | 2013-02-22 14:16:05.024428-06 |              1 | This is the first version. No changes to report. |                 1 |               1
+               8 | Example Validator Script   | This is an example validator script.                                                                                                            | 2013-02-22 14:16:40.316202-06 |              1 | This is the first version. No changes to report. |                 1 |               1
+               9 | Example Limit Script       | This is an example limit script.                                                                                                                | 2013-02-22 14:17:01.132341-06 |              1 | This is the first version. No changes to report. |                 1 |               1
+(9 rows)
+

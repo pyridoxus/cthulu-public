@@ -366,6 +366,14 @@ cthulu=# insert into object_type values (DEFAULT, 'PERL');
 INSERT 0 1
 cthulu=# insert into object_type values (DEFAULT, 'PATH');
 INSERT 0 1
+cthulu=# insert into object_type values (DEFAULT, 'SUITE');
+INSERT 0 1
+cthulu=# insert into object_type values (DEFAULT, 'BLOCK');
+INSERT 0 1
+cthulu=# insert into object_type values (DEFAULT, 'MODULE');
+INSERT 0 1
+cthulu=# insert into object_type values (DEFAULT, 'UNIT');
+INSERT 0 1
 cthulu=# SELECT * from object_type;
  object_type_key | object_type_description 
 -----------------+-------------------------
@@ -373,5 +381,58 @@ cthulu=# SELECT * from object_type;
                2 | LUA
                3 | PERL
                4 | PATH
-(4 rows)
+               5 | SUITE
+               6 | BLOCK
+               7 | MODULE
+               8 | UNIT
+(8 rows)
 
+cthulu=# insert into object_data values (DEFAULT, 'Example Test Suite', 'This is just an example test suite.', now(), 1, 'This is the first version. No changes to report.', 1, 5);
+INSERT 0 1
+cthulu=# select * from object_data;
+ object_data_key |    object_name     |         object_description          |     object_date_created      | object_version |               object_version_notes               | object_author_key | object_type_key 
+-----------------+--------------------+-------------------------------------+------------------------------+----------------+--------------------------------------------------+-------------------+-----------------
+               1 | Example Test Suite | This is just an example test suite. | 2013-02-22 13:44:52.31621-06 |              1 | This is the first version. No changes to report. |                 1 |               5
+(1 row)
+
+cthulu=# insert into test_ordinal values (DEFAULT, 1, DEFAULT);
+INSERT 0 1
+cthulu=# select * from test_ordinal;
+ test_ordinal_key | test_ordinal | test_enabled 
+------------------+--------------+--------------
+                1 |            1 | t
+(1 row)
+
+cthulu=# insert into object_data values (default, 'First Example Test Block', 'This is an example test block. This could be the entire collection of tests for one section of the device (input/output/etc).', now(), 1, 'This is the first version. No changes to report.', 1, 6);
+INSERT 0 1
+cthulu=# select * from object_data;
+ object_data_key |       object_name        |                                                      object_description                                                       |      object_date_created      | object_version |               object_version_notes               | object_author_key | object_type_key 
+-----------------+--------------------------+-------------------------------------------------------------------------------------------------------------------------------+-------------------------------+----------------+--------------------------------------------------+-------------------+-----------------
+               1 | Example Test Suite       | This is just an example test suite.                                                                                           | 2013-02-22 13:44:52.31621-06  |              1 | This is the first version. No changes to report. |                 1 |               5
+               2 | First Example Test Block | This is an example test block. This could be the entire collection of tests for one section of the device (input/output/etc). | 2013-02-22 13:53:37.092381-06 |              1 | This is the first version. No changes to report. |                 1 |               6
+(2 rows)
+
+cthulu=# insert into test_blocks values (default, 2, null);
+INSERT 0 1
+cthulu=# insert into suites_blocks values (1, 1, 1);
+ERROR:  insert or update on table "suites_blocks" violates foreign key constraint "suites_blocks_test_suite_key_fkey"
+DETAIL:  Key (test_suite_key)=(1) is not present in table "test_suites".
+cthulu=# select * from test_suites;
+ test_suite_key | object_data_key 
+----------------+-----------------
+(0 rows)
+
+cthulu=# insert into test_suites values (DEFAULT, 1);
+INSERT 0 1
+cthulu=# insert into suites_blocks values (1, 1, 1);
+ERROR:  insert or update on table "suites_blocks" violates foreign key constraint "suites_blocks_test_suite_key_fkey"
+DETAIL:  Key (test_suite_key)=(1) is not present in table "test_suites".
+cthulu=# select * from test_suites;
+ test_suite_key | object_data_key 
+----------------+-----------------
+              2 |               1
+(1 row)
+
+cthulu=# insert into suites_blocks values (2, 1, 1);
+INSERT 0 1
+(NOTE: The next available key must have been incremented even though it was never really used during the first error)

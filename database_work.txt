@@ -346,3 +346,32 @@ Indexes:
 Referenced by:
     TABLE "object_data" CONSTRAINT "object_data_object_type_key_fkey" FOREIGN KEY (object_type_key) REFERENCES object_type(object_type_key)
 
+-------------------------------------------------------------------------------------------------------------
+The following describes adding some data to the tables to be used eventually for testing
+-------------------------------------------------------------------------------------------------------------
+
+cthulu=# insert into authors values (DEFAULT, 'cmcculloch', 'password', 'Craig McCulloch', 'craig.mcculloch@hbm.com');
+INSERT 0 1
+cthulu=# select * from authors;
+ author_key | author_user_name | author_password |   author_name   |      author_email       
+------------+------------------+-----------------+-----------------+-------------------------
+          1 | cmcculloch       | password        | Craig McCulloch | craig.mcculloch@hbm.com
+(1 row)
+
+cthulu=# insert into object_type values (DEFAULT, 'PYTHON');
+INSERT 0 1
+cthulu=# insert into object_type values (DEFAULT, 'LUA');
+INSERT 0 1
+cthulu=# insert into object_type values (DEFAULT, 'PERL');
+INSERT 0 1
+cthulu=# insert into object_type values (DEFAULT, 'PATH');
+INSERT 0 1
+cthulu=# SELECT * from object_type;
+ object_type_key | object_type_description 
+-----------------+-------------------------
+               1 | PYTHON
+               2 | LUA
+               3 | PERL
+               4 | PATH
+(4 rows)
+

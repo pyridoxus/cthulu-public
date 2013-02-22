@@ -483,3 +483,108 @@ cthulu=# select * from object_data;
                9 | Example Limit Script       | This is an example limit script.                                                                                                                | 2013-02-22 14:17:01.132341-06 |              1 | This is the first version. No changes to report. |                 1 |               1
 (9 rows)
 
+cthulu=# insert into scripts values (default, 6, E'def parameters(bundle):\n\t# Parameters can be anything:\n\t# .. boolean, upper-lower pair in a tuple,\n\t# .. strings, date-time range, amps\n\t# .. voltage, resistance, etc.\n\n\treturn { \"input\" : 4, \"units\" : \"Volts\" }  # Parameters returned to module\n', 1);
+INSERT 0 1
+cthulu=# insert into scripts values (default, 7, E'from time import sleep\n\ndef module(bundle):\n\t# Very simple scripts to illustrate how a test\n\t# will be used in the production version. The\n\t# bundle parameter contains everything the test\n\t# module will need:\n\t# .. access to the output panel in the GUI\n\t# .. database access\n\t# .. module stores UUT response in bundle\n\t# .. validator tests UUT response from bundle\n\t# .. validator gets limit function from bundle\n\t# .. access to the test equipment\n\t# .. access the UUT\n\t# .. module, validator, limits intercommunication\n\t# .. access to results of previous tests\n\t# .. many more features added as needed\n\n\tbundle.output(\"Running test: %s\" % testName)\n\tbundle.output(\"Bundle: %s\" % bundle)\n#\tprint \"parameters\", bundle.parameters\n#\tprint \"module\", bundle.module\n#\tprint \"validate\", bundle.validate\n#\tprint \"limits\", bundle.limits\n#\tprint \"output\", bundle.output\n\tparameters = bundle.parameters(bundle)\n\t# Parameters just as example.\n\tbundle.output(\"Parameters: %s\" % parameters)\n\n"\t# Pretend to setup a voltage input...\n\t# bundle.dcSource.setVoltage(parameters[\"input\"])\n\n\tbundle.testResponse = 2.3  #fake response from UUT\n\n\tbundle.testResult = bundle.validate(bundle) # test against limits and save result\n\tsleep(1)  # Just for demo purposes\n\tbundle.incrementProgress()# Eventually, the results are put in the database\n# and the test engine loads another test into the\n# bundle to be executed\n\tbundle.DBNotify()\n\tsleep(1)\n', 1);
+INSERT 0 1
+cthulu=# insert into scripts values (default, 8, E'def validate(bundle):\n\t# Validate the UUT response in any number of ways\n\t# But doing something simple for demo\n\n\tlowerLimit = bundle.limits(bundle)[\"criteria\"][0]\n\tupperLimit = bundle.limits(bundle)[\"criteria\"][1]\n\n\t# The next line defines the human-readble \n\t# version of the limits found in print outs,\n\t# certs, and datasheets.\n\tbundle.testLimits = \"%.6f < %.6f < %.6f (%s)\" % \\\n\t\t(lowerLimit, bundle.testResponse, upperLimit, bundle.parameters(bundle)[\"units\"])\n\n\tresult = bundle.testResponse > lowerLimit and bundle.testResponse < upperLimit\n\treturn result  # Results of validation to module code\n', 1);
+UPDATE 1
+cthulu=# insert into scripts values (default, 9, E'def limits(bundle):\n\t# Limits can return anything:\n\t# .. boolean, upper-lower pair in a tuple,\n\t# .. strings, date-time range, etc.\n\n\treturn { \"criteria\" : [-5, 5] , \"units\" : \"Volts\" }  # Result return to validator\n', 1);
+UPDATE 1
+cthulu=# select * from scripts;                                                                                                       
+
+ script_key | object_data_key |                                              script                                               | script_steps 
+------------+-----------------+---------------------------------------------------------------------------------------------------+--------------
+          3 |               8 | def validate(bundle):                                                                             |            1
+                              :         # Validate the UUT response in any number of ways                                           
+                              :         # But doing something simple for demo                                                       
+                              :                                                                                                     
+                              :         lowerLimit = bundle.limits(bundle)["criteria"][0]                                           
+                              :         upperLimit = bundle.limits(bundle)["criteria"][1]                                           
+                              :                                                                                                     
+                              :         # The next line defines the human-readble                                                   
+                              :         # version of the limits found in print outs,                                                
+                              :         # certs, and datasheets.                                                                    
+                              :         bundle.testLimits = "%.6f < %.6f < %.6f (%s)" % \                                           
+                              :                 (lowerLimit, bundle.testResponse, upperLimit, bundle.parameters(bundle)["units"])   
+                              :                                                                                                     
+                              :         result = bundle.testResponse > lowerLimit and bundle.testResponse < upperLimit              
+                              :         return result  # Results of validation to module code                                       
+                              :                                                                                                     
+          4 |               9 | def limits(bundle):                                                                               |            1
+                              :         # Limits can return anything:                                                               
+                              :         # .. boolean, upper-lower pair in a tuple,                                                  
+                              :         # .. strings, date-time range, etc.                                                         
+                              :                                                                                                     
+                              :         return { "criteria" : [-5, 5] , "units" : "Volts" }  # Result return to validator           
+                              :                                                                                                     
+          1 |               6 | def parameters(bundle):                                                                           |            1
+                              :         # Parameters can be anything:                                                               
+                              :         # .. boolean, upper-lower pair in a tuple,                                                  
+                              :         # .. strings, date-time range, amps                                                         
+                              :         # .. voltage, resistance, etc.                                                              
+                              :                                                                                                     
+                              :         return { "input" : 4, "units" : "Volts" }  # Parameters returned to module                  
+                              :                                                                                                     
+          2 |               7 | from time import sleep                                                                            |            1
+                              :                                                                                                     
+                              : def module(bundle):                                                                                 
+                              :         # Very simple scripts to illustrate how a test                                              
+                              :         # will be used in the production version. The                                               
+                              :         # bundle parameter contains everything the test                                             
+                              :         # module will need:                                                                         
+                              :         # .. access to the output panel in the GUI                                                  
+                              :         # .. database access                                                                        
+                              :         # .. module stores UUT response in bundle                                                   
+                              :         # .. validator tests UUT response from bundle                                               
+                              :         # .. validator gets limit function from bundle                                              
+                              :         # .. access to the test equipment                                                           
+                              :         # .. access the UUT                                                                         
+                              :         # .. module, validator, limits intercommunication                                           
+                              :         # .. access to results of previous tests                                                    
+                              :         # .. many more features added as needed                                                     
+                              :                                                                                                     
+                              :         bundle.output("Running test: %s" % testName)                                                
+                              :         bundle.output("Bundle: %s" % bundle)                                                        
+                              : #       print "parameters", bundle.parameters                                                       
+                              : #       print "module", bundle.module                                                               
+                              : #       print "validate", bundle.validate                                                           
+                              : #       print "limits", bundle.limits                                                               
+                              : #       print "output", bundle.output                                                               
+                              :         parameters = bundle.parameters(bundle)                                                      
+                              :         # Parameters just as example.                                                               
+                              :         bundle.output("Parameters: %s" % parameters)                                                
+                              :                                                                                                     
+                              : "       # Pretend to setup a voltage input...                                                       
+                              :         # bundle.dcSource.setVoltage(parameters["input"])                                           
+                              :                                                                                                     
+                              :         bundle.testResponse = 2.3  #fake response from UUT                                          
+                              :                                                                                                     
+                              :         bundle.testResult = bundle.validate(bundle) # test against limits and save result           
+                              :         sleep(1)  # Just for demo purposes                                                          
+                              :         bundle.incrementProgress()# Eventually, the results are put in the database                 
+                              : # and the test engine loads another test into the                                                   
+                              : # bundle to be executed                                                                             
+                              :         bundle.DBNotify()                                                                           
+                              :         sleep(1)                                                                                    
+                              :                                                                                                     
+(4 rows)
+
+cthulu=# insert into object_data values (default, 'Example Module 1', 'This is a module that contains the necessary connections to the four scripts that perform the test.', now(), 1, "This is the first version. There are no changes to report.", 1, 7);
+ERROR:  column "This is the first version. There are no changes to report." does not exist
+LINE 1: ...e four scripts that perform the test.', now(), 1, "This is t...
+                                                             ^
+cthulu=# insert into object_data values (default, 'Example Module 1', 'This is a module that contains the necessary connections to the four scripts that perform the test.', now(), 1, 'This is the first version. There are no changes to report.', 1, 7);
+INSERT 0 1
+cthulu=# select * from object_data;
+cthulu=# insert into modules values (default, 1, 2, 3, 4, 10, NULL);
+INSERT 0 1
+cthulu=# select * from test_blocks;
+ test_block_key | object_data_key | dependency_key 
+----------------+-----------------+----------------
+              1 |               2 |               
+(1 row)
+
+cthulu=# insert into blocks_modules values (1, 1, 1);
+INSERT 0 1
+cthulu=# 

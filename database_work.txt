@@ -1,0 +1,348 @@
+-------------------------------------------------------------------------------------------------------------
+The following is exactly how the database was assembled
+-------------------------------------------------------------------------------------------------------------
+
+postgres=# create database cthulu with owner postgres;
+CREATE DATABASE
+postgres-# \c cthulu
+psql (8.4.13)
+You are now connected to database "cthulu".
+
+cthulu=# create table object_type (object_type_key serial primary key, object_type_description text not null);
+NOTICE:  CREATE TABLE will create implicit sequence "object_type_object_type_key_seq" for serial column "object_type.object_type_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "object_type_pkey" for table "object_type"
+CREATE TABLE
+
+cthulu=# create table authors (author_key serial primary key, author_user_name varchar(63) not null, author_password text not null, author_name varchar(126) not null, author_email varchar(126) not null, unique(author_user_name) );
+NOTICE:  CREATE TABLE will create implicit sequence "authors_author_key_seq" for serial column "authors.author_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "authors_pkey" for table "authors"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "authors_author_user_name_key" for table "authors"
+CREATE TABLE
+
+cthulu=# create table object_data (object_data_key serial, object_name varchar(126) not null, object_description text not null, object_date_created timestamp with time zone not null, object_version integer not null, object_version_notes text not null, object_author_key integer references authors (author_key) not null, object_type_key integer references object_type (object_type_key) not null, primary key (object_data_key), unique(object_name) );
+NOTICE:  CREATE TABLE will create implicit sequence "object_data_object_data_key_seq" for serial column "object_data.object_data_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "object_data_pkey" for table "object_data"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "object_data_object_name_key" for table "object_data"
+CREATE TABLE
+cthulu=# create table limit_units (limit_unit_key serial primary key, limit_unit_abbr varchar(15) not null, limit_unit_desc text not null, object_data_key integer references object_data(object_data_key) not null);                                                       NOTICE:  CREATE TABLE will create implicit sequence "limit_units_limit_unit_key_seq" for serial column "limit_units.limit_unit_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "limit_units_pkey" for table "limit_units"
+CREATE TABLE
+cthulu=# create table scripts (script_key serial primary key, object_data_key integer references object_data(object_data_key) not null, script text not null, script_steps integer not null);
+NOTICE:  CREATE TABLE will create implicit sequence "scripts_script_key_seq" for serial column "scripts.script_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "scripts_pkey" for table "scripts"
+CREATE TABLE
+cthulu=# create table limits_limit_units (limit_script_key integer references scripts(script_key), limit_unit_key integer references limit_units(limit_unit_key), primary key (limit_script_key, limit_unit_key));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "limits_limit_units_pkey" for table "limits_limit_units"
+CREATE TABLE
+cthulu=# create table modules (module_key serial primary key, parameter_script_key integer references scripts (script_key) not null, test_script_key integer references scripts (script_key) not null, validator_script_key integer references scripts (script_key) not null, limit_script_key integer references scripts (script_key) not null, object_data_key integer references object_data (object_data_key) not null);
+NOTICE:  CREATE TABLE will create implicit sequence "modules_module_key_seq" for serial column "modules.module_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "modules_pkey" for table "modules"
+CREATE TABLE
+cthulu=# create table module_dependencies (dependency_key serial primary key, module_key integer references modules (module_key) not null);
+NOTICE:  CREATE TABLE will create implicit sequence "module_dependencies_dependency_key_seq" for serial column "module_dependencies.dependency_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "module_dependencies_pkey" for table "module_dependencies"
+CREATE TABLE
+cthulu=# alter table modules add column dependency_key integer references module_dependencies (dependency_key);
+ALTER TABLE
+cthulu=# create table module_ordinal (module_ordinal_key serial primary key, module_ordinal integer not null, module_enabled boolean not null default TRUE);
+NOTICE:  CREATE TABLE will create implicit sequence "module_ordinal_module_ordinal_key_seq" for serial column "module_ordinal.module_ordinal_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "module_ordinal_pkey" for table "module_ordinal"
+CREATE TABLE
+cthulu=# create table test_block_dependencies (dependency_key serial primary key);
+NOTICE:  CREATE TABLE will create implicit sequence "test_block_dependencies_dependency_key_seq" for serial column "test_block_dependencies.dependency_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_block_dependencies_pkey" for table "test_block_dependencies"
+CREATE TABLE
+cthulu=# create table test_blocks (test_block_key serial primary key, object_data_key integer references object_data (object_data_key) not null, dependency_key integer references test_block_dependencies (dependency_key));
+NOTICE:  CREATE TABLE will create implicit sequence "test_blocks_test_block_key_seq" for serial column "test_blocks.test_block_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_blocks_pkey" for table "test_blocks"
+CREATE TABLE
+cthulu=# alter table test_block_dependencies add column block_key integer references test_blocks (test_block_key) not null;
+ALTER TABLE
+cthulu=# create table blocks_modules ( test_block_key integer references test_blocks (test_block_key) not null, module_key integer references modules (module_key) not null, module_ordinal integer references module_ordinal (module_ordinal_key) not null, primary key (test_block_key, module_key, module_ordinal));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "blocks_modules_pkey" for table "blocks_modules"
+CREATE TABLE
+cthulu=# create table test_ordinal (test_ordinal_key serial primary key, test_ordinal integer not null, test_enabled boolean not null default TRUE);
+NOTICE:  CREATE TABLE will create implicit sequence "test_ordinal_test_ordinal_key_seq" for serial column "test_ordinal.test_ordinal_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_ordinal_pkey" for table "test_ordinal"
+CREATE TABLE
+cthulu=# create table test_suites (test_suite_key serial primary key, object_data_key integer references object_data (object_data_key) not null);
+NOTICE:  CREATE TABLE will create implicit sequence "test_suites_test_suite_key_seq" for serial column "test_suites.test_suite_key"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_suites_pkey" for table "test_suites"
+CREATE TABLE
+cthulu=# create table suites_blocks (test_suite_key integer references test_suites (test_suite_key), test_block_key integer references test_blocks (test_block_key), test_ordinal_key integer references test_ordinal (test_ordinal_key), primary key (test_suite_key, test_block_key, test_ordinal_key));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "suites_blocks_pkey" for table "suites_blocks"
+CREATE TABLE
+cthulu=# \d
+                             List of relations
+ Schema |                    Name                    |   Type   |  Owner   
+--------+--------------------------------------------+----------+----------
+ public | authors                                    | table    | postgres
+ public | authors_author_key_seq                     | sequence | postgres
+ public | blocks_modules                             | table    | postgres
+ public | limit_units                                | table    | postgres
+ public | limit_units_limit_unit_key_seq             | sequence | postgres
+ public | limits_limit_units                         | table    | postgres
+ public | module_dependencies                        | table    | postgres
+ public | module_dependencies_dependency_key_seq     | sequence | postgres
+ public | module_ordinal                             | table    | postgres
+ public | module_ordinal_module_ordinal_key_seq      | sequence | postgres
+ public | modules                                    | table    | postgres
+ public | modules_module_key_seq                     | sequence | postgres
+ public | object_data                                | table    | postgres
+ public | object_data_object_data_key_seq            | sequence | postgres
+ public | object_type                                | table    | postgres
+ public | object_type_object_type_key_seq            | sequence | postgres
+ public | scripts                                    | table    | postgres
+ public | scripts_script_key_seq                     | sequence | postgres
+ public | suites_blocks                              | table    | postgres
+ public | test_block_dependencies                    | table    | postgres
+ public | test_block_dependencies_dependency_key_seq | sequence | postgres
+ public | test_blocks                                | table    | postgres
+ public | test_blocks_test_block_key_seq             | sequence | postgres
+ public | test_ordinal                               | table    | postgres
+ public | test_ordinal_test_ordinal_key_seq          | sequence | postgres
+ public | test_suites                                | table    | postgres
+ public | test_suites_test_suite_key_seq             | sequence | postgres
+(27 rows)
+
+cthulu=# 
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------
+The following describes all the tables
+-------------------------------------------------------------------------------------------------------------
+
+
+cthulu=# \d test_suites
+                                    Table "public.test_suites"
+     Column      |  Type   |                              Modifiers                               
+-----------------+---------+----------------------------------------------------------------------
+ test_suite_key  | integer | not null default nextval('test_suites_test_suite_key_seq'::regclass)
+ object_data_key | integer | not null
+Indexes:
+    "test_suites_pkey" PRIMARY KEY, btree (test_suite_key)
+Foreign-key constraints:
+    "test_suites_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+Referenced by:
+    TABLE "suites_blocks" CONSTRAINT "suites_blocks_test_suite_key_fkey" FOREIGN KEY (test_suite_key) REFERENCES test_suites(test_suite_key)
+
+cthulu=# \d suites_blocks
+      Table "public.suites_blocks"
+      Column      |  Type   | Modifiers 
+------------------+---------+-----------
+ test_suite_key   | integer | not null
+ test_block_key   | integer | not null
+ test_ordinal_key | integer | not null
+Indexes:
+    "suites_blocks_pkey" PRIMARY KEY, btree (test_suite_key, test_block_key, test_ordinal_key)
+Foreign-key constraints:
+    "suites_blocks_test_block_key_fkey" FOREIGN KEY (test_block_key) REFERENCES test_blocks(test_block_key)
+    "suites_blocks_test_ordinal_key_fkey" FOREIGN KEY (test_ordinal_key) REFERENCES test_ordinal(test_ordinal_key)
+    "suites_blocks_test_suite_key_fkey" FOREIGN KEY (test_suite_key) REFERENCES test_suites(test_suite_key)
+
+cthulu=# \d test_ordinal
+                                     Table "public.test_ordinal"
+      Column      |  Type   |                                Modifiers                                
+------------------+---------+-------------------------------------------------------------------------
+ test_ordinal_key | integer | not null default nextval('test_ordinal_test_ordinal_key_seq'::regclass)
+ test_ordinal     | integer | not null
+ test_enabled     | boolean | not null default true
+Indexes:
+    "test_ordinal_pkey" PRIMARY KEY, btree (test_ordinal_key)
+Referenced by:
+    TABLE "suites_blocks" CONSTRAINT "suites_blocks_test_ordinal_key_fkey" FOREIGN KEY (test_ordinal_key) REFERENCES test_ordinal(test_ordinal_key)
+
+cthulu=# \d test_blocks
+                                    Table "public.test_blocks"
+     Column      |  Type   |                              Modifiers                               
+-----------------+---------+----------------------------------------------------------------------
+ test_block_key  | integer | not null default nextval('test_blocks_test_block_key_seq'::regclass)
+ object_data_key | integer | not null
+ dependency_key  | integer | 
+Indexes:
+    "test_blocks_pkey" PRIMARY KEY, btree (test_block_key)
+Foreign-key constraints:
+    "test_blocks_dependency_key_fkey" FOREIGN KEY (dependency_key) REFERENCES test_block_dependencies(dependency_key)
+    "test_blocks_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+Referenced by:
+    TABLE "blocks_modules" CONSTRAINT "blocks_modules_test_block_key_fkey" FOREIGN KEY (test_block_key) REFERENCES test_blocks(test_block_key)
+    TABLE "suites_blocks" CONSTRAINT "suites_blocks_test_block_key_fkey" FOREIGN KEY (test_block_key) REFERENCES test_blocks(test_block_key)
+    TABLE "test_block_dependencies" CONSTRAINT "test_block_dependencies_block_key_fkey" FOREIGN KEY (block_key) REFERENCES test_blocks(test_block_key)
+
+cthulu=# \d test_block_dependencies
+                                   Table "public.test_block_dependencies"
+     Column     |  Type   |                                    Modifiers                                     
+----------------+---------+----------------------------------------------------------------------------------
+ dependency_key | integer | not null default nextval('test_block_dependencies_dependency_key_seq'::regclass)
+ block_key      | integer | not null
+Indexes:
+    "test_block_dependencies_pkey" PRIMARY KEY, btree (dependency_key)
+Foreign-key constraints:
+    "test_block_dependencies_block_key_fkey" FOREIGN KEY (block_key) REFERENCES test_blocks(test_block_key)
+Referenced by:
+    TABLE "test_blocks" CONSTRAINT "test_blocks_dependency_key_fkey" FOREIGN KEY (dependency_key) REFERENCES test_block_dependencies(dependency_key)
+
+cthulu=# \d blocks_modules
+    Table "public.blocks_modules"
+     Column     |  Type   | Modifiers 
+----------------+---------+-----------
+ test_block_key | integer | not null
+ module_key     | integer | not null
+ module_ordinal | integer | not null
+Indexes:
+    "blocks_modules_pkey" PRIMARY KEY, btree (test_block_key, module_key, module_ordinal)
+Foreign-key constraints:
+    "blocks_modules_module_key_fkey" FOREIGN KEY (module_key) REFERENCES modules(module_key)
+    "blocks_modules_module_ordinal_fkey" FOREIGN KEY (module_ordinal) REFERENCES module_ordinal(module_ordinal_key)
+    "blocks_modules_test_block_key_fkey" FOREIGN KEY (test_block_key) REFERENCES test_blocks(test_block_key)
+
+cthulu=# \d module_ordinal
+                                       Table "public.module_ordinal"
+       Column       |  Type   |                                  Modifiers                                  
+--------------------+---------+-----------------------------------------------------------------------------
+ module_ordinal_key | integer | not null default nextval('module_ordinal_module_ordinal_key_seq'::regclass)
+ module_ordinal     | integer | not null
+ module_enabled     | boolean | not null default true
+Indexes:
+    "module_ordinal_pkey" PRIMARY KEY, btree (module_ordinal_key)
+Referenced by:
+    TABLE "blocks_modules" CONSTRAINT "blocks_modules_module_ordinal_fkey" FOREIGN KEY (module_ordinal) REFERENCES module_ordinal(module_ordinal_key)
+
+cthulu=# \d modules
+                                    Table "public.modules"
+        Column        |  Type   |                          Modifiers                           
+----------------------+---------+--------------------------------------------------------------
+ module_key           | integer | not null default nextval('modules_module_key_seq'::regclass)
+ parameter_script_key | integer | not null
+ test_script_key      | integer | not null
+ validator_script_key | integer | not null
+ limit_script_key     | integer | not null
+ object_data_key      | integer | not null
+ dependency_key       | integer | 
+Indexes:
+    "modules_pkey" PRIMARY KEY, btree (module_key)
+Foreign-key constraints:
+    "modules_dependency_key_fkey" FOREIGN KEY (dependency_key) REFERENCES module_dependencies(dependency_key)
+    "modules_limit_script_key_fkey" FOREIGN KEY (limit_script_key) REFERENCES scripts(script_key)
+    "modules_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+    "modules_parameter_script_key_fkey" FOREIGN KEY (parameter_script_key) REFERENCES scripts(script_key)
+    "modules_test_script_key_fkey" FOREIGN KEY (test_script_key) REFERENCES scripts(script_key)
+    "modules_validator_script_key_fkey" FOREIGN KEY (validator_script_key) REFERENCES scripts(script_key)
+Referenced by:
+    TABLE "blocks_modules" CONSTRAINT "blocks_modules_module_key_fkey" FOREIGN KEY (module_key) REFERENCES modules(module_key)
+    TABLE "module_dependencies" CONSTRAINT "module_dependencies_module_key_fkey" FOREIGN KEY (module_key) REFERENCES modules(module_key)
+
+cthulu=# \d module_dependencies
+                                   Table "public.module_dependencies"
+     Column     |  Type   |                                  Modifiers                                   
+----------------+---------+------------------------------------------------------------------------------
+ dependency_key | integer | not null default nextval('module_dependencies_dependency_key_seq'::regclass)
+ module_key     | integer | not null
+Indexes:
+    "module_dependencies_pkey" PRIMARY KEY, btree (dependency_key)
+Foreign-key constraints:
+    "module_dependencies_module_key_fkey" FOREIGN KEY (module_key) REFERENCES modules(module_key)
+Referenced by:
+    TABLE "modules" CONSTRAINT "modules_dependency_key_fkey" FOREIGN KEY (dependency_key) REFERENCES module_dependencies(dependency_key)
+
+cthulu=# \d scripts
+                                  Table "public.scripts"
+     Column      |  Type   |                          Modifiers                           
+-----------------+---------+--------------------------------------------------------------
+ script_key      | integer | not null default nextval('scripts_script_key_seq'::regclass)
+ object_data_key | integer | not null
+ script          | text    | not null
+ script_steps    | integer | not null
+Indexes:
+    "scripts_pkey" PRIMARY KEY, btree (script_key)
+Foreign-key constraints:
+    "scripts_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+Referenced by:
+    TABLE "limits_limit_units" CONSTRAINT "limits_limit_units_limit_script_key_fkey" FOREIGN KEY (limit_script_key) REFERENCES scripts(script_key)
+    TABLE "modules" CONSTRAINT "modules_limit_script_key_fkey" FOREIGN KEY (limit_script_key) REFERENCES scripts(script_key)
+    TABLE "modules" CONSTRAINT "modules_parameter_script_key_fkey" FOREIGN KEY (parameter_script_key) REFERENCES scripts(script_key)
+    TABLE "modules" CONSTRAINT "modules_test_script_key_fkey" FOREIGN KEY (test_script_key) REFERENCES scripts(script_key)
+    TABLE "modules" CONSTRAINT "modules_validator_script_key_fkey" FOREIGN KEY (validator_script_key) REFERENCES scripts(script_key)
+
+cthulu=# \d limits_limit_units
+   Table "public.limits_limit_units"
+      Column      |  Type   | Modifiers 
+------------------+---------+-----------
+ limit_script_key | integer | not null
+ limit_unit_key   | integer | not null
+Indexes:
+    "limits_limit_units_pkey" PRIMARY KEY, btree (limit_script_key, limit_unit_key)
+Foreign-key constraints:
+    "limits_limit_units_limit_script_key_fkey" FOREIGN KEY (limit_script_key) REFERENCES scripts(script_key)
+    "limits_limit_units_limit_unit_key_fkey" FOREIGN KEY (limit_unit_key) REFERENCES limit_units(limit_unit_key)
+
+cthulu=# \d limit_units
+                                           Table "public.limit_units"
+     Column      |         Type          |                              Modifiers                               
+-----------------+-----------------------+----------------------------------------------------------------------
+ limit_unit_key  | integer               | not null default nextval('limit_units_limit_unit_key_seq'::regclass)
+ limit_unit_abbr | character varying(15) | not null
+ limit_unit_desc | text                  | not null
+ object_data_key | integer               | not null
+Indexes:
+    "limit_units_pkey" PRIMARY KEY, btree (limit_unit_key)
+Foreign-key constraints:
+    "limit_units_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+Referenced by:
+    TABLE "limits_limit_units" CONSTRAINT "limits_limit_units_limit_unit_key_fkey" FOREIGN KEY (limit_unit_key) REFERENCES limit_units(limit_unit_key)
+
+cthulu=# \d object_data
+                                               Table "public.object_data"
+        Column        |           Type           |                               Modifiers                               
+----------------------+--------------------------+-----------------------------------------------------------------------
+ object_data_key      | integer                  | not null default nextval('object_data_object_data_key_seq'::regclass)
+ object_name          | character varying(126)   | not null
+ object_description   | text                     | not null
+ object_date_created  | timestamp with time zone | not null
+ object_version       | integer                  | not null
+ object_version_notes | text                     | not null
+ object_author_key    | integer                  | not null
+ object_type_key      | integer                  | not null
+Indexes:
+    "object_data_pkey" PRIMARY KEY, btree (object_data_key)
+    "object_data_object_name_key" UNIQUE, btree (object_name)
+Foreign-key constraints:
+    "object_data_object_author_key_fkey" FOREIGN KEY (object_author_key) REFERENCES authors(author_key)
+    "object_data_object_type_key_fkey" FOREIGN KEY (object_type_key) REFERENCES object_type(object_type_key)
+Referenced by:
+    TABLE "limit_units" CONSTRAINT "limit_units_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+    TABLE "modules" CONSTRAINT "modules_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+    TABLE "scripts" CONSTRAINT "scripts_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+    TABLE "test_blocks" CONSTRAINT "test_blocks_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+    TABLE "test_suites" CONSTRAINT "test_suites_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+
+cthulu=# \d authors
+                                          Table "public.authors"
+      Column      |          Type          |                          Modifiers                           
+------------------+------------------------+--------------------------------------------------------------
+ author_key       | integer                | not null default nextval('authors_author_key_seq'::regclass)
+ author_user_name | character varying(63)  | not null
+ author_password  | text                   | not null
+ author_name      | character varying(126) | not null
+ author_email     | character varying(126) | not null
+Indexes:
+    "authors_pkey" PRIMARY KEY, btree (author_key)
+    "authors_author_user_name_key" UNIQUE, btree (author_user_name)
+Referenced by:
+    TABLE "object_data" CONSTRAINT "object_data_object_author_key_fkey" FOREIGN KEY (object_author_key) REFERENCES authors(author_key)
+
+cthulu=# \d object_type
+                                        Table "public.object_type"
+         Column          |  Type   |                               Modifiers                               
+-------------------------+---------+-----------------------------------------------------------------------
+ object_type_key         | integer | not null default nextval('object_type_object_type_key_seq'::regclass)
+ object_type_description | text    | not null
+Indexes:
+    "object_type_pkey" PRIMARY KEY, btree (object_type_key)
+Referenced by:
+    TABLE "object_data" CONSTRAINT "object_data_object_type_key_fkey" FOREIGN KEY (object_type_key) REFERENCES object_type(object_type_key)
+

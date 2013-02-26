@@ -9,11 +9,88 @@ Created on Feb 25, 2013
 '''
 
 import wx
+import psycopg2
+import string
 
-# begin wxGlade: extracode
-# end wxGlade
+class Database():
+    '''
+    Database connection class.
+    '''
+    def __init__(self, ip = "127.0.0.1"):
+        '''
+        Setup internals.
+        '''
+        self.__ip = ip
+        self.__conn = None
+        self.__cur = None
+        self.__DBreturning = None
+        
+        
+    def insert(self, table, insertDict, returningList):
+        '''
+        Insert the values of the dictionary where the keys are the column
+        names into the table. Use returningList to indicate which columns
+        to be returned from the insertion.
+        '''
+
+        columnString = ""
+        valueString = ""
+        i = iter(insertDict)
+        while True:
+            try:
+                column = i.next()
+                columnString += "%s," % column
+                valueString += "%s," % insertDict[column]
+            except StopIteration:
+                columnString = columnString[0:-1]   # Remove training comma
+                valueString = valueString[0:-1]   # Remove training comma
+                break
+            
+        returningString = ""
+        if len(returningList) > 0:
+            returningString = "RETURNING ("
+            for item in returningList:
+                returningString += "%s," % item
+            returningString = returningString[0:-1] # Remove training comma
+            returningString += ")"  # closing parentheses
+        
+        s = "INSERT INTO %s (%s) VALUES (%s) %s;" % (table,
+                                                    columnString,
+                                                    valueString,
+                                                    returningString)
+                            
+        print s
+#        try:
+#            self.__conn = psycopg2.connect("dbname='hbmsomat' "
+#                                           "user='postgres' "
+#                                           "host='localhost' "
+#                                           "password='wibble'")
+#        except:
+##TODO: Need to throw an exception, store in log file, etc
+#            print "I am unable to connect to the database"
+#        
+#        self.__cur = self.__conn.cursor()
+#        self.__cur.execute(s)
+#        self.__conn.commit()
+#        
+#        # Returning a tuple containing uuid and execTime
+#        self.__DBreturning = self.__cur.fetchone()[0]
+#        self.__cur.close()
+#        self.__conn.close()
+#        return self.__splitDBReturning()
 
 
+    def __splitDBReturning(self):
+        '''
+        Split the returning string from the DB and return two strings.
+        '''
+        uuid, date = string.split(self.__DBreturning, ",")
+        uuid = uuid[1:] # Drop the opening parenthesis
+        date = date[1:-2]   # Drop the ending parenthesis and both quotes
+        print uuid, date
+        return uuid, date
+        
+    
 
 class SuiteFrame(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -176,6 +253,8 @@ class SuiteFrame(wx.Frame):
     # wxGlade: SuiteFrame.<event_handler>
     def onMenuHelpAbout(self, event):
         print "Event handler `onMenuHelpAbout' not implemented!"
+        db = Database()
+        db.insert("cthulu", { "dog" : 1, "cat" : 2 }, ["key", "junk"])
         event.Skip()
 
 # end of class SuiteFrame

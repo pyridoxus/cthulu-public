@@ -60,24 +60,25 @@ class Database():
                                                     returningString)
                             
         print s
-#        try:
-#            self.__conn = psycopg2.connect("dbname='hbmsomat' "
-#                                           "user='postgres' "
-#                                           "host='localhost' "
-#                                           "password='wibble'")
-#        except:
-##TODO: Need to throw an exception, store in log file, etc
-#            print "I am unable to connect to the database"
-#        
-#        self.__cur = self.__conn.cursor()
-#        self.__cur.execute(s)
-#        self.__conn.commit()
-#        
-#        # Returning a tuple containing uuid and execTime
-#        self.__DBreturning = self.__cur.fetchone()[0]
-#        self.__cur.close()
-#        self.__conn.close()
-#        return self.__splitDBReturning()
+        try:
+            self.__conn = psycopg2.connect("dbname='cthulu' "
+                                           "user='postgres' "
+                                           "host='%s' "
+                                           "password='wibble'"
+                                           % self.__ip)
+        except:
+#TODO: Need to throw an exception, store in log file, etc
+            print "I am unable to connect to the database"
+        
+        self.__cur = self.__conn.cursor()
+        self.__cur.execute(s)
+        self.__conn.commit()
+        
+        # Returning a tuple containing uuid and execTime
+        DBReturning = self.__cur.fetchone()[0]
+        self.__cur.close()
+        self.__conn.close()
+        return DBReturning
 
 
     def __splitDBReturning(self):
@@ -254,7 +255,10 @@ class SuiteFrame(wx.Frame):
     def onMenuHelpAbout(self, event):
         print "Event handler `onMenuHelpAbout' not implemented!"
         db = Database()
-        db.insert("cthulu", { "dog" : 1, "cat" : 2 }, ["key", "junk"])
+        print db.insert("scripts", { "script_key" : "DEFAULT",
+                                     "object_data_key" : 1,
+                                     "script" : "'print \"Hello World!\"'",
+                                     "script_steps" : 1 }, ["script_key"])
         event.Skip()
 
 # end of class SuiteFrame

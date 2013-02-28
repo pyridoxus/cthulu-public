@@ -19,11 +19,20 @@ NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "authors_pkey" fo
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "authors_author_user_name_key" for table "authors"
 CREATE TABLE
 
+-----------------------------------------------------------------------------------------------------
+*****************************************************************************************************
+NOTE THAT THIS TABLE WAS ALTERED AT A LATER TIME. BE SURE TO ADD THE object_parent integer references object_data (object_data_key) COLUMN IF CREATING A NEW DATABASE FROM THIS DESIGN
+*****************************************************************************************************
+-----------------------------------------------------------------------------------------------------
+
 cthulu=# create table object_data (object_data_key serial, object_name varchar(126) not null, object_description text not null, object_date_created timestamp with time zone not null, object_version integer not null, object_version_notes text not null, object_author_key integer references authors (author_key) not null, object_type_key integer references object_type (object_type_key) not null, primary key (object_data_key), unique(object_name) );
 NOTICE:  CREATE TABLE will create implicit sequence "object_data_object_data_key_seq" for serial column "object_data.object_data_key"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "object_data_pkey" for table "object_data"
 NOTICE:  CREATE TABLE / UNIQUE will create implicit index "object_data_object_name_key" for table "object_data"
 CREATE TABLE
+
+
+
 cthulu=# create table limit_units (limit_unit_key serial primary key, limit_unit_abbr varchar(15) not null, limit_unit_desc text not null, object_data_key integer references object_data(object_data_key) not null);                                                       NOTICE:  CREATE TABLE will create implicit sequence "limit_units_limit_unit_key_seq" for serial column "limit_units.limit_unit_key"
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "limit_units_pkey" for table "limit_units"
 CREATE TABLE
@@ -588,3 +597,118 @@ cthulu=# select * from test_blocks;
 cthulu=# insert into blocks_modules values (1, 1, 1);
 INSERT 0 1
 cthulu=# 
+-----------------------------------------------------------------------------------------------------
+*****************************************************************************************************
+NOTE THE FOLLOWING CHANGES:
+*****************************************************************************************************
+-----------------------------------------------------------------------------------------------------
+cthulu=# alter table object_data add column object_parent integer references object_data(object_data_key);
+ALTER TABLE
+cthulu=# \d object_data
+                                               Table "public.object_data"
+        Column        |           Type           |                               Modifiers                               
+----------------------+--------------------------+-----------------------------------------------------------------------
+ object_data_key      | integer                  | not null default nextval('object_data_object_data_key_seq'::regclass)
+ object_name          | character varying(126)   | not null
+ object_description   | text                     | not null
+ object_date_created  | timestamp with time zone | not null
+ object_version       | integer                  | not null
+ object_version_notes | text                     | not null
+ object_author_key    | integer                  | not null
+ object_type_key      | integer                  | not null
+ object_parent        | integer                  | 
+Indexes:
+    "object_data_pkey" PRIMARY KEY, btree (object_data_key)
+    "object_data_object_name_key" UNIQUE, btree (object_name)
+Foreign-key constraints:
+    "object_data_object_author_key_fkey" FOREIGN KEY (object_author_key) REFERENCES authors(author_key)
+    "object_data_object_parent_fkey" FOREIGN KEY (object_parent) REFERENCES object_data(object_data_key)
+    "object_data_object_type_key_fkey" FOREIGN KEY (object_type_key) REFERENCES object_type(object_type_key)
+Referenced by:
+    TABLE "limit_units" CONSTRAINT "limit_units_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+    TABLE "modules" CONSTRAINT "modules_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+    TABLE "object_data" CONSTRAINT "object_data_object_parent_fkey" FOREIGN KEY (object_parent) REFERENCES object_data(object_data_key)
+    TABLE "scripts" CONSTRAINT "scripts_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+    TABLE "test_blocks" CONSTRAINT "test_blocks_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+    TABLE "test_suites" CONSTRAINT "test_suites_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+
+cthulu=# create table ecns (ecn_key integer primary key, ecn_number varchar(63) not null, ecn_date date not null, ecn_description text not null, ecn_display boolean not null default FALSE);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "ecns_pkey" for table "ecns"
+CREATE TABLE
+cthulu=# create table suites_ecns (suite_key integer references test_suites(test_suite_key), ecn_key integer references ecns(ecn_key), primary key(suite_key, ecn_key));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "suites_ecns_pkey" for table "suites_ecns"
+CREATE TABLE
+cthulu=# \d suites_ecns                                                                                                                  Table "public.suites_ecns"
+  Column   |  Type   | Modifiers 
+-----------+---------+-----------
+ suite_key | integer | not null
+ ecn_key   | integer | not null
+Indexes:
+    "suites_ecns_pkey" PRIMARY KEY, btree (suite_key, ecn_key)
+Foreign-key constraints:
+    "suites_ecns_ecn_key_fkey" FOREIGN KEY (ecn_key) REFERENCES ecns(ecn_key)
+    "suites_ecns_suite_key_fkey" FOREIGN KEY (suite_key) REFERENCES test_suites(test_suite_key)
+
+cthulu=# \d test_suites
+                                    Table "public.test_suites"
+     Column      |  Type   |                              Modifiers                               
+-----------------+---------+----------------------------------------------------------------------
+ test_suite_key  | integer | not null default nextval('test_suites_test_suite_key_seq'::regclass)
+ object_data_key | integer | not null
+Indexes:
+    "test_suites_pkey" PRIMARY KEY, btree (test_suite_key)
+Foreign-key constraints:
+    "test_suites_object_data_key_fkey" FOREIGN KEY (object_data_key) REFERENCES object_data(object_data_key)
+Referenced by:
+    TABLE "suites_blocks" CONSTRAINT "suites_blocks_test_suite_key_fkey" FOREIGN KEY (test_suite_key) REFERENCES test_suites(test_suite_key)
+    TABLE "suites_ecns" CONSTRAINT "suites_ecns_suite_key_fkey" FOREIGN KEY (suite_key) REFERENCES test_suites(test_suite_key)
+
+cthulu=# \d ecns
+                                       Table "public.ecns"
+     Column      |         Type          |                       Modifiers                        
+-----------------+-----------------------+--------------------------------------------------------
+ ecn_key         | integer               | not null default nextval('ecns_ecn_key_seq'::regclass)
+ ecn_number      | character varying(63) | not null
+ ecn_date        | date                  | not null
+ ecn_description | text                  | not null
+ ecn_display     | boolean               | not null default false
+Indexes:
+    "ecns_pkey" PRIMARY KEY, btree (ecn_key)
+Referenced by:
+    TABLE "suites_ecns" CONSTRAINT "suites_ecns_ecn_key_fkey" FOREIGN KEY (ecn_key) REFERENCES ecns(ecn_key)
+
+cthulu=# \d
+                             List of relations
+ Schema |                    Name                    |   Type   |  Owner   
+--------+--------------------------------------------+----------+----------
+ public | authors                                    | table    | postgres
+ public | authors_author_key_seq                     | sequence | postgres
+ public | blocks_modules                             | table    | postgres
+ public | ecns                                       | table    | postgres
+ public | limit_units                                | table    | postgres
+ public | limit_units_limit_unit_key_seq             | sequence | postgres
+ public | limits_limit_units                         | table    | postgres
+ public | module_dependencies                        | table    | postgres
+ public | module_dependencies_dependency_key_seq     | sequence | postgres
+ public | module_ordinal                             | table    | postgres
+ public | module_ordinal_module_ordinal_key_seq      | sequence | postgres
+ public | modules                                    | table    | postgres
+ public | modules_module_key_seq                     | sequence | postgres
+ public | object_data                                | table    | postgres
+ public | object_data_object_data_key_seq            | sequence | postgres
+ public | object_type                                | table    | postgres
+ public | object_type_object_type_key_seq            | sequence | postgres
+ public | scripts                                    | table    | postgres
+ public | scripts_script_key_seq                     | sequence | postgres
+ public | suites_blocks                              | table    | postgres
+ public | suites_ecns                                | table    | postgres
+ public | test_block_dependencies                    | table    | postgres
+ public | test_block_dependencies_dependency_key_seq | sequence | postgres
+ public | test_blocks                                | table    | postgres
+ public | test_blocks_test_block_key_seq             | sequence | postgres
+ public | test_ordinal                               | table    | postgres
+ public | test_ordinal_test_ordinal_key_seq          | sequence | postgres
+ public | test_suites                                | table    | postgres
+ public | test_suites_test_suite_key_seq             | sequence | postgres
+(29 rows)
+

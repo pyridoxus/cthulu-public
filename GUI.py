@@ -28,8 +28,10 @@ from NotifyThread import NotifyThread
 
 from time import sleep
 
+import socket
+
 # Resource path
-R = "/home/cmcculloch/Documents/Armada/Lua_Test_System/cthulu/"
+hostname = socket.gethostname()
 
 class MainFrame(wx.Frame):
     '''
@@ -43,6 +45,7 @@ class MainFrame(wx.Frame):
         # begin wxGlade: MainFrame.__init__
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
+        self.__R = "/tmp/cthulu"    # Resource directory
         self.dbEndDateSizer_staticbox = wx.StaticBox(self, -1, "End Date")
         self.dbSizer_staticbox = wx.StaticBox(self, -1,
                                 "Certifications and Test Data version 0.01")
@@ -52,38 +55,42 @@ class MainFrame(wx.Frame):
         self.outputSizer_staticbox = wx.StaticBox(self, -1, "Output Messages")
         self.dbStartDateSizer_staticbox = wx.StaticBox(self, -1, "Start Date")
         self.buttonExit = wx.BitmapButton(self, -1,
-                                          wx.Bitmap("%sexit.png" % R,
+                                          wx.Bitmap("%sexit.xpm" % self.__R,
                                                     wx.BITMAP_TYPE_ANY),
                                           style=wx.NO_BORDER)
         self.buttonRestart = wx.BitmapButton(self, -1,
-                                             wx.Bitmap("%sreload.png" % R,
+                                             wx.Bitmap("%sreload.xpm" % self.__R,
                                                        wx.BITMAP_TYPE_ANY),
                                              style=wx.NO_BORDER)
         self.buttonAdministration = wx.BitmapButton(self, -1,
-                                            wx.Bitmap("%sagent.png" % R,
+                                            wx.Bitmap("%sagent.xpm" % self.__R,
                                                       wx.BITMAP_TYPE_ANY),
                                                     style=wx.NO_BORDER)
         self.buttonViewLogs = wx.BitmapButton(self, -1,
-                                              wx.Bitmap("%sdocument.png" % R,
+                                              wx.Bitmap("%sdocument.xpm" % \
+                                                        self.__R,
                                                         wx.BITMAP_TYPE_ANY),
                                               style=wx.NO_BORDER)
         self.buttonGenerateSysReport = wx.BitmapButton(self, -1,
-                                            wx.Bitmap("%smisc_doc.png" % R,
+                                            wx.Bitmap("%smisc_doc.xpm" % \
+                                                        self.__R,
                                                         wx.BITMAP_TYPE_ANY),
                                                        style=wx.NO_BORDER)
         self.buttonBugReport = wx.BitmapButton(self, -1,
-                                               wx.Bitmap("%sbug.png" % R,
+                                               wx.Bitmap("%sbug.xpm" % self.__R,
                                                          wx.BITMAP_TYPE_ANY),
                                                style=wx.NO_BORDER)
         self.buttonHelp = wx.BitmapButton(self, 43,
-                                          wx.Bitmap("%shelp.png" % R,
+                                          wx.Bitmap("%shelp.xpm" % self.__R,
                                                     wx.BITMAP_TYPE_ANY),
                                           style=wx.NO_BORDER)
         self.bitmapDataBase = wx.StaticBitmap(self, -1,
-                                              wx.Bitmap("%sdatabase.png" % R,
+                                              wx.Bitmap("%sdatabase.xpm" % \
+                                                        self.__R,
                                                         wx.BITMAP_TYPE_ANY))
         self.bitmapNetwork = wx.StaticBitmap(self, -1,
-                                    wx.Bitmap("%sconnect_established.png" % R,
+                                    wx.Bitmap("%sconnect_established.xpm" % \
+                                              self.__R,
                                               wx.BITMAP_TYPE_ANY))
         self.labelDate = wx.StaticText(self, -1, "Wed Nov 21")
         self.labelTime = wx.StaticText(self, -1, "11:48 AM")
@@ -120,31 +127,37 @@ class MainFrame(wx.Frame):
         self.checkboxPassedTests = wx.CheckBox(self, -1,
                                                "Only return PASSED tests")
         self.buttonQuery = wx.BitmapButton(self, -1,
-                                    wx.Bitmap("%sagt_action_success.png" % R,
+                                    wx.Bitmap("%sagt_action_success.xpm" % \
+                                                self.__R,
                                                 wx.BITMAP_TYPE_ANY),
                                            style=wx.NO_BORDER)
         self.buttonDBResetGUI = wx.BitmapButton(self, -1,
-                                       wx.Bitmap("%scnrdelete-all.png" % R,
+                                       wx.Bitmap("%scnrdelete-all.xpm" % \
+                                                 self.__R,
                                                  wx.BITMAP_TYPE_ANY),
                                                 style=wx.NO_BORDER)
         self.gridResults = wx.grid.Grid(self, -1, size=(1, 1))
         self.checkboxISO17025 = wx.CheckBox(self, -1,
                                             "ISO17025 Compliant Certs")
         self.buttonCreateCerts = wx.BitmapButton(self, -1,
-                                                wx.Bitmap("%smisc.png" % R,
+                                                wx.Bitmap("%smisc.xpm" % \
+                                                          self.__R,
                                                           wx.BITMAP_TYPE_ANY),
                                                  style=wx.NO_BORDER)
         self.buttonPreview = wx.BitmapButton(self, -1,
-                                             wx.Bitmap("%sfilefind.png" % R,
+                                             wx.Bitmap("%sfilefind.xpm" % \
+                                                       self.__R,
                                                        wx.BITMAP_TYPE_ANY),
                                              style=wx.NO_BORDER)
         self.buttonSlideDB = wx.BitmapButton(self, -1,
-                                             wx.Bitmap("%s2leftarrow.png" % R,
+                                             wx.Bitmap("%s2leftarrow.xpm" % \
+                                                       self.__R,
                                                        wx.BITMAP_TYPE_ANY),
                                              style=wx.NO_BORDER)
         self.buttonSlideTest = wx.BitmapButton(self, 37,
-                                               wx.Bitmap("%s2rightarrow.png" % \
-                                                         R, wx.BITMAP_TYPE_ANY),
+                                               wx.Bitmap("%s2rightarrow.xpm" % \
+                                                         self.__R,
+                                                         wx.BITMAP_TYPE_ANY),
                                                style=wx.NO_BORDER)
         self.labelTestSuite = wx.StaticText(self, -1, "Test Suite:")
         self.comboTestSuite = wx.ComboBox(self, -1,
@@ -158,26 +171,31 @@ class MainFrame(wx.Frame):
         self.gaugeTest = wx.Gauge(self, -1, 1000)
         self.labelTestTime = wx.StaticText(self, -1, "0:00")
         self.buttonTestStart = wx.BitmapButton(self, -1,
-                                            wx.Bitmap("%sagt_forward.png" % R,
+                                            wx.Bitmap("%sagt_forward.xpm" % \
+                                                      self.__R,
                                                       wx.BITMAP_TYPE_ANY),
                                                style=wx.NO_BORDER)
         self.buttonTestPause = wx.BitmapButton(self, -1,
-                                    wx.Bitmap("%sagt_pause-queue.png" % R,
-                                               wx.BITMAP_TYPE_ANY),
-                                               style=wx.NO_BORDER)
+                                    wx.Bitmap("%sagt_pause-queue.xpm" % \
+                                                self.__R,
+                                                wx.BITMAP_TYPE_ANY),
+                                                style=wx.NO_BORDER)
         self.buttonTestStep = wx.BitmapButton(self, -1,
-                                            wx.Bitmap("%sagt_aisles.png" % R,
+                                            wx.Bitmap("%sagt_aisles.xpm" % \
+                                                      self.__R,
                                                       wx.BITMAP_TYPE_ANY),
                                               style=wx.NO_BORDER)
         self.buttonTestRepeat = wx.BitmapButton(self, -1,
-                                                wx.Bitmap("%sreload.png" % R,
+                                                wx.Bitmap("%sreload.xpm" % \
+                                                          self.__R,
                                                           wx.BITMAP_TYPE_ANY),
                                                 style=wx.NO_BORDER)
         self.labelSlider = wx.StaticText(self, -1, "0ms")
         self.sliderRepeatSpeed = wx.Slider(self, -1, 0, 0, 100,
                                            style=wx.SL_HORIZONTAL)
         self.buttonTestStop = wx.BitmapButton(self, -1,
-                                              wx.Bitmap("%sagt_stop.png" % R,
+                                              wx.Bitmap("%sagt_stop.xpm" % \
+                                                        self.__R,
                                                         wx.BITMAP_TYPE_ANY),
                                               style=wx.NO_BORDER)
         self.treeTest = wx.TreeCtrl(self, 35, style=wx.TR_HAS_BUTTONS| \
@@ -198,16 +216,18 @@ class MainFrame(wx.Frame):
         self.textLimitsCode = wx.TextCtrl(self, 39, "",
                                           style=wx.TE_MULTILINE|wx.HSCROLL)
         self.buttonCodeEmail = wx.BitmapButton(self, 40,
-                                               wx.Bitmap("%smail_send.png" % R,
+                                               wx.Bitmap("%smail_send.xpm" % \
+                                                         self.__R,
                                                          wx.BITMAP_TYPE_ANY),
                                                style=wx.NO_BORDER)
         self.buttonCodeSave = wx.BitmapButton(self, 41,
-                                              wx.Bitmap("%sfilesave.png" % R,
+                                              wx.Bitmap("%sfilesave.xpm" % \
+                                                        self.__R,
                                                         wx.BITMAP_TYPE_ANY),
                                               style=wx.NO_BORDER)
         self.buttonCodeDone = wx.BitmapButton(self, 42,
-                                        wx.Bitmap("%sagt_action_success.png" % \
-                                                  R,
+                                        wx.Bitmap("%sagt_action_success.xpm" % \
+                                                  self.__R,
                                                   wx.BITMAP_TYPE_ANY),
                                               style=wx.NO_BORDER)
         self.textOutput = wx.TextCtrl(self, -1, "",
@@ -877,13 +897,17 @@ class MainFrame(wx.Frame):
         else:
             if not self.__toggleDemo:
                 self.__toggleDemo = True
-                self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdb_status.png" % R))
-                self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_no.png" % R))
+                self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdb_status.xpm" % \
+                                                        self.__R))
+                self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_no.xpm" % \
+                                                       self.__R))
             else:
                 self.__toggleDemo = False
-                self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdatabase.png" % R))
+                self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdatabase.xpm" % \
+                                                        self.__R))
                 self.bitmapNetwork.SetBitmap(wx.Bitmap("%s"
-                                            "connect_established.png" % R))
+                                            "connect_established.xpm" % \
+                                            self.__R))
         event.Skip()
 
     def eventRestart(self, event): # wxGlade: MainFrame.<event_handler>
@@ -1028,8 +1052,8 @@ class MainFrame(wx.Frame):
             self.__appSizer.Show(0, False, True)    # 0 indexes the dbSizer
                                                     # False = hide
                                                     # True = recursive
-            self.buttonSlideDB.SetBitmapLabel(wx.Bitmap("%s2rightarrow.png" % \
-                                                        R))
+            self.buttonSlideDB.SetBitmapLabel(wx.Bitmap("%s2rightarrow.xpm" % \
+                                                        self.__R))
             self.buttonSlideTest.Show(False)        # Don't show other button
             self.buttonSlideDB.SetToolTipString("Show Database Panel")
             self.textOutput.AppendText("Hiding DB GUI panel.\n")
@@ -1037,8 +1061,8 @@ class MainFrame(wx.Frame):
             self.__appSizer.Show(0, True, True)     # 0 indexes the dbSizer
                                                     # True = show
                                                     # True = recursive
-            self.buttonSlideDB.SetBitmapLabel(wx.Bitmap("%s2leftarrow.png" % \
-                                                        R))
+            self.buttonSlideDB.SetBitmapLabel(wx.Bitmap("%s2leftarrow.xpm" % \
+                                                        self.__R))
             self.buttonSlideTest.Show(True)        # Show other button
             self.buttonSlideDB.SetToolTipString("Hide Database Panel")
             self.textOutput.AppendText("Showing DB GUI panel.\n")
@@ -1054,7 +1078,7 @@ class MainFrame(wx.Frame):
                                                     # False = hide
                                                     # True = recursive
             self.buttonSlideTest.SetBitmapLabel(
-                                wx.Bitmap("%s2leftarrow.png" % R))
+                                wx.Bitmap("%s2leftarrow.xpm" % self.__R))
             self.buttonSlideDB.Show(False)        # Don't show other button
             self.buttonSlideTest.SetToolTipString("Show Test Panel")
             self.textOutput.AppendText("Hiding Test GUI panel.\n")
@@ -1063,7 +1087,7 @@ class MainFrame(wx.Frame):
                                                     # True = show
                                                     # True = recursive
             self.buttonSlideTest.SetBitmapLabel(
-                                wx.Bitmap("%s2rightarrow.png" % R))
+                                wx.Bitmap("%s2rightarrow.xpm" % self.__R))
             self.buttonSlideDB.Show(True)        # Don't show other button
             self.buttonSlideTest.SetToolTipString("Hide Test Panel")
             self.__showCodePanel()  # Put code/tree back to previous state
@@ -1699,10 +1723,10 @@ class MainFrame(wx.Frame):
         Change database notification icon according to state of data in event.
         '''
         if event.data:
-            self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdb_comit.png" % R,
+            self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdb_comit.xpm" % self.__R,
                                                     wx.BITMAP_TYPE_ANY))
         else:
-            self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdatabase.png" % R,
+            self.bitmapDataBase.SetBitmap(wx.Bitmap("%sdatabase.xpm" % self.__R,
                                                         wx.BITMAP_TYPE_ANY))
         event.Skip()
     
@@ -1713,12 +1737,14 @@ class MainFrame(wx.Frame):
         '''
         # event.data is either False or contains the IP address string 
         if event.data is not False:
-            self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_established.png" % R,
+            self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_established.xpm" \
+                                                   % self.__R,
                                                     wx.BITMAP_TYPE_ANY))
             self.bitmapNetwork.SetToolTipString("Connected to network at %s" %\
                                                 event.data)
         else:
-            self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_no.png" % R,
+            self.bitmapNetwork.SetBitmap(wx.Bitmap("%sconnect_no.xpm" % \
+                                                   self.__R,
                                                     wx.BITMAP_TYPE_ANY))
         event.Skip()
         

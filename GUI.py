@@ -35,7 +35,8 @@ hostname = socket.gethostname()
 
 class MainFrame(wx.Frame):
     '''
-    Main and only frame for the CTHULU Lua Armada Production test
+    Main and only frame for the CTHULU Production test
+    CTHULU = Control and Test Hardware Using LinUx
     '''
    
     def __init__(self, *args, **kwds):
@@ -45,7 +46,7 @@ class MainFrame(wx.Frame):
         # begin wxGlade: MainFrame.__init__
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
-        self.__R = "/tmp/cthulu"    # Resource directory
+        self.__R = "/tmp/cthulu/"    # Resource directory
         self.dbEndDateSizer_staticbox = wx.StaticBox(self, -1, "End Date")
         self.dbSizer_staticbox = wx.StaticBox(self, -1,
                                 "Certifications and Test Data version 0.01")
